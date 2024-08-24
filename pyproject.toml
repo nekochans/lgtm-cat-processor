@@ -1,7 +1,7 @@
 [project]
 name = "lgtm-cat-processor"
 version = "0.1.0"
-description = "Add your description here"
+description = "猫のLGTM画像を生成するプロジェクト"
 authors = [
     { name = "kobayashi-m42", email = "m42kobayashi@gmail.com" }
 ]
