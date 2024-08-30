@@ -9,3 +9,4 @@
 #   generate-hashes: false
 #   universal: false
 
+ruff==0.6.3

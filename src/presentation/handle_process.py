@@ -13,15 +13,16 @@ class ProcessType(Enum):
     CONVERT_TO_WEBP = "convertToWebp"
     STORE_TO_DB = "storeToDb"
 
-def handle_process(process, bucket_name, object_key): 
-    judge_image_usecase = JudgeImageUsecase(bucket_name,object_key)
-    generate_lgtm_image_usecase = GenerateLgtmImageUsecase(bucket_name,object_key)
-    convert_to_webp_usecase = ConvertToWebpUsecase(bucket_name,object_key)
-    store_to_db_usecase = StoreToDbUsecase(bucket_name,object_key)
+
+def handle_process(process, bucket_name, object_key):
+    judge_image_usecase = JudgeImageUsecase(bucket_name, object_key)
+    generate_lgtm_image_usecase = GenerateLgtmImageUsecase(bucket_name, object_key)
+    convert_to_webp_usecase = ConvertToWebpUsecase(bucket_name, object_key)
+    store_to_db_usecase = StoreToDbUsecase(bucket_name, object_key)
 
     if process not in [e.value for e in ProcessType]:
         print("想定外のprocessが指定された場合は終了する")
-        sys.exit(1) 
+        sys.exit(1)
 
     if process == ProcessType.JUDGE_IMAGE.value:
         judge_image_usecase.execute()
@@ -31,4 +32,3 @@ def handle_process(process, bucket_name, object_key):
         convert_to_webp_usecase.execute()
     elif process == ProcessType.STORE_TO_DB.value:
         store_to_db_usecase.execute()
-
