@@ -14,7 +14,7 @@ class ProcessType(Enum):
     STORE_TO_DB = "storeToDb"
 
 
-def handle_process(process, bucket_name, object_key):
+def handle_process(process: str, bucket_name: str, object_key: str) -> None:
     judge_image_usecase = JudgeImageUsecase(bucket_name, object_key)
     generate_lgtm_image_usecase = GenerateLgtmImageUsecase(bucket_name, object_key)
     convert_to_webp_usecase = ConvertToWebpUsecase(bucket_name, object_key)
