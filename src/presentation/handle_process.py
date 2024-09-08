@@ -1,7 +1,7 @@
 from enum import Enum
 import sys
 
-from domain.s3_repository_interface import S3RepositoryInterface
+from domain.object_storage_repository_interface import ObjectStorageRepositoryInterface
 from infrastructure.s3_repository import (
     create_s3_client,
     create_s3_repository,
@@ -21,7 +21,7 @@ class ProcessType(Enum):
 
 def handle_process(process: str, bucket_name: str, object_key: str) -> None:
     s3_client = create_s3_client()
-    s3_repository: S3RepositoryInterface = create_s3_repository(s3_client)
+    s3_repository: ObjectStorageRepositoryInterface = create_s3_repository(s3_client)
 
     judge_image_usecase = JudgeImageUsecase(bucket_name, object_key)
     generate_lgtm_image_usecase = GenerateLgtmImageUsecase(

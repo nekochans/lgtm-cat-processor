@@ -1,12 +1,15 @@
 import io
 import os
 from PIL import Image, ImageDraw, ImageFont
-from domain.s3_repository_interface import S3RepositoryInterface
+from domain.object_storage_repository_interface import ObjectStorageRepositoryInterface
 
 
 class GenerateLgtmImageUsecase:
     def __init__(
-        self, s3repository: S3RepositoryInterface, bucket_name: str, object_key: str
+        self,
+        s3repository: ObjectStorageRepositoryInterface,
+        bucket_name: str,
+        object_key: str,
     ) -> None:
         self.bucket_name = bucket_name
         self.object_key = object_key

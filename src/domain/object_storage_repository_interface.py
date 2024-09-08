@@ -2,7 +2,7 @@ import io
 from typing import Protocol
 
 
-class S3RepositoryInterface(Protocol):
+class ObjectStorageRepositoryInterface(Protocol):
     def fetch_image(self, bucket_name: str, object_key: str) -> bytes: ...
 
     def upload_image(

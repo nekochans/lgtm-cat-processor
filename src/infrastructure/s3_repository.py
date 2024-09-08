@@ -1,18 +1,18 @@
 import io
 import boto3
 from mypy_boto3_s3 import S3Client
-from domain.s3_repository_interface import S3RepositoryInterface
+from domain.object_storage_repository_interface import ObjectStorageRepositoryInterface
 
 
 def create_s3_client() -> S3Client:
     return boto3.client("s3")
 
 
-def create_s3_repository(s3_client: S3Client) -> S3RepositoryInterface:
+def create_s3_repository(s3_client: S3Client) -> ObjectStorageRepositoryInterface:
     return S3Repository(s3_client)
 
 
-class S3Repository(S3RepositoryInterface):
+class S3Repository(ObjectStorageRepositoryInterface):
     def __init__(self, s3_client: S3Client) -> None:
         self.s3_client = s3_client
 
