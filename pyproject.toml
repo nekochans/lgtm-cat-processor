@@ -5,10 +5,14 @@ description = "猫のLGTM画像を生成するプロジェクト"
 authors = [
     { name = "kobayashi-m42", email = "m42kobayashi@gmail.com" }
 ]
-dependencies = []
+dependencies = [
+    "boto3>=1.35.10",
+    "pillow>=10.4.0",
+    "boto3-stubs[s3]>=1.35.12",
+]
 readme = "README.md"
 requires-python = ">= 3.8"
-
+    
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
