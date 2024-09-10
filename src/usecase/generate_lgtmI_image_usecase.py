@@ -2,6 +2,7 @@ import io
 import os
 from PIL import Image, ImageDraw, ImageFont
 from domain.object_storage_repository_interface import ObjectStorageRepositoryInterface
+from infrastructure.logging import AppLogger
 
 
 class GenerateLgtmImageUsecase:
@@ -10,6 +11,7 @@ class GenerateLgtmImageUsecase:
         s3repository: ObjectStorageRepositoryInterface,
         bucket_name: str,
         object_key: str,
+        logger: AppLogger,
     ) -> None:
         self.bucket_name = bucket_name
         self.object_key = object_key
@@ -17,6 +19,7 @@ class GenerateLgtmImageUsecase:
             os.environ["LAMBDA_TASK_ROOT"], "fonts", "MPLUSRounded1c-Medium.ttf"
         )
         self.s3repository = s3repository
+        self.logger = logger
 
     def gemerate_lgtm_image(self, image_data: bytes) -> io.BytesIO:
         with Image.open(io.BytesIO(image_data)) as img:
@@ -69,6 +72,7 @@ class GenerateLgtmImageUsecase:
             return buffer
 
     def execute(self) -> None:
+        self.logger.info("LGTM画像の作成を開始")
         try:
             cat_image = self.s3repository.fetch_image(self.bucket_name, self.object_key)
 
@@ -84,10 +88,12 @@ class GenerateLgtmImageUsecase:
                 upload_bucket_name, self.object_key, processed_image
             )
 
+            self.logger.info("LGTM画像の作成に成功")
+
         except ValueError as e:
-            print(f"error: {e}")
+            self.logger.error(e, exc_info=True)
             raise
 
         except Exception as e:
-            print(f"Unexpected error: {e}")
+            self.logger.error(e, exc_info=True)
             raise

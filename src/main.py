@@ -31,6 +31,8 @@ def lambda_handler(event: Event, context: Context) -> Response:
             "Invalid input: process, bucketName, objectKey が設定されていません。"
         )
 
-    handle_process(process, bucket_name, object_key)
+    request_id = context.aws_request_id  # type: ignore
+
+    handle_process(request_id, process, bucket_name, object_key)
 
     return format_response(bucket_name, object_key)
