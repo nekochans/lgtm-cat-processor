@@ -2,7 +2,7 @@ from enum import Enum
 import sys
 
 from domain.object_storage_repository_interface import ObjectStorageRepositoryInterface
-from infrastructure.logging import AppLogger, setup_logger
+from log.logging import AppLogger, setup_logger
 from infrastructure.s3_repository import (
     create_s3_client,
     create_s3_repository,

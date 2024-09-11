@@ -2,7 +2,7 @@ import io
 import os
 from PIL import Image, ImageDraw, ImageFont
 from domain.object_storage_repository_interface import ObjectStorageRepositoryInterface
-from infrastructure.logging import AppLogger
+from log.logging import AppLogger
 
 
 class GenerateLgtmImageUsecase:
