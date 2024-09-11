@@ -5,6 +5,12 @@ from domain.object_storage_repository_interface import ObjectStorageRepositoryIn
 from log.logging import AppLogger
 
 
+def build_upload_object_key(object_key: str) -> str:
+    directory, filename = os.path.split(object_key)
+    imagename_without_ext = os.path.splitext(filename)[0]
+    return os.path.join(directory, imagename_without_ext + ".png")
+
+
 class GenerateLgtmImageUsecase:
     def __init__(
         self,
@@ -84,8 +90,10 @@ class GenerateLgtmImageUsecase:
                     "環境変数 GENERATE_LGTM_IMAGE_UPLOAD_BUCKET が設定されていません"
                 )
 
+            upload_object_key = build_upload_object_key(self.object_key)
+
             self.s3repository.upload_image(
-                upload_bucket_name, self.object_key, processed_image
+                upload_bucket_name, upload_object_key, processed_image
             )
 
             self.logger.info("LGTM画像の作成に成功")
