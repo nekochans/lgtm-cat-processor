@@ -8,7 +8,7 @@ from log.logging import AppLogger
 def build_upload_object_key(object_key: str) -> str:
     directory, filename = os.path.split(object_key)
     imagename_without_ext = os.path.splitext(filename)[0]
-    return os.path.join(directory, imagename_without_ext + ".png")
+    return os.path.join(directory, imagename_without_ext + ".webp")
 
 
 class GenerateLgtmImageUsecase:
@@ -73,7 +73,7 @@ class GenerateLgtmImageUsecase:
             draw.text((x_meow, y_meow), meow_text, font=font_meow, fill=(255, 255, 255))
 
             buffer = io.BytesIO()
-            img.save(buffer, format="PNG")
+            img.save(buffer, format="WEBP")
             buffer.seek(0)
             return buffer
 
