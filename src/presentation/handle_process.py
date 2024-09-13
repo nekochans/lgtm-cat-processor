@@ -1,5 +1,4 @@
 from enum import Enum
-import sys
 
 from domain.object_storage_repository_interface import ObjectStorageRepositoryInterface
 from log.logging import AppLogger, setup_logger
@@ -34,8 +33,8 @@ def handle_process(
     store_to_db_usecase = StoreToDbUsecase(bucket_name, object_key)
 
     if process not in [e.value for e in ProcessType]:
-        print("想定外のprocessが指定された場合は終了する")
-        sys.exit(1)
+        logger.error(f"ProcessTypeで定義されていないprocessが指定されました: {process}")
+        raise ValueError(f"想定外のprocessが指定されました: {process}")
 
     if process == ProcessType.JUDGE_IMAGE.value:
         judge_image_usecase.execute()
@@ -46,5 +45,9 @@ def handle_process(
         store_to_db_usecase.execute()
         return bucket_name, object_key
     else:
-        logger.error(f"ProcessTypeで定義されたprocessに必要な処理が実行されていません: {process}")
-        raise RuntimeError(f"ProcessTypeで定義されたprocessに必要な処理が実行されていません: {process}")
+        logger.error(
+            f"ProcessTypeで定義されたprocessに必要な処理が実行されていません: {process}"
+        )
+        raise RuntimeError(
+            f"ProcessTypeで定義されたprocessに必要な処理が実行されていません: {process}"
+        )
