@@ -20,7 +20,7 @@ class ProcessType(Enum):
 
 def handle_process(
     request_id: str, process: str, bucket_name: str, object_key: str
-) -> None:
+) -> tuple[str, str]:
     logger: AppLogger = setup_logger(request_id, process, bucket_name, object_key)
     s3_client = create_s3_client()
     s3_repository: ObjectStorageRepositoryInterface = create_s3_repository(
@@ -39,7 +39,12 @@ def handle_process(
 
     if process == ProcessType.JUDGE_IMAGE.value:
         judge_image_usecase.execute()
+        return bucket_name, object_key
     elif process == ProcessType.GENERATE_LGTM_IMAGE.value:
-        generate_lgtm_image_usecase.execute()
+        return generate_lgtm_image_usecase.execute()
     elif process == ProcessType.STORE_TO_DB.value:
         store_to_db_usecase.execute()
+        return bucket_name, object_key
+    else:
+        logger.error(f"ProcessTypeで定義されたprocessに必要な処理が実行されていません: {process}")
+        raise RuntimeError(f"ProcessTypeで定義されたprocessに必要な処理が実行されていません: {process}")
