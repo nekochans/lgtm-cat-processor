@@ -25,6 +25,7 @@ mypy-boto3-s3==1.35.2
 mypy-extensions==1.0.0
     # via mypy
 pillow==10.4.0
+pymysql==1.1.1
 python-dateutil==2.9.0.post0
     # via botocore
 ruff==0.6.3
@@ -34,6 +35,7 @@ six==1.16.0
     # via python-dateutil
 types-awscrt==0.21.2
     # via botocore-stubs
+types-pymysql==1.1.0.20240524
 types-s3transfer==0.10.2
     # via boto3-stubs
 typing-extensions==4.12.2

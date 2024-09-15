@@ -22,6 +22,7 @@ jmespath==1.0.1
 mypy-boto3-s3==1.35.2
     # via boto3-stubs
 pillow==10.4.0
+pymysql==1.1.1
 python-dateutil==2.9.0.post0
     # via botocore
 s3transfer==0.10.2
