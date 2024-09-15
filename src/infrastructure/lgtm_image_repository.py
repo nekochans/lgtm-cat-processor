@@ -6,13 +6,18 @@ from log.logging import AppLogger
 
 
 def create_lgtm_image_repository(
-    connection: Connection, logger: AppLogger
+    connection: Connection,  # type: ignore[type-arg]
+    logger: AppLogger,
 ) -> LgtmImageRepositoryIntercase:
     return LtgmImageRepository(connection, logger)
 
 
 class LtgmImageRepository(LgtmImageRepositoryIntercase):
-    def __init__(self, connection: Connection, logger: AppLogger) -> None:
+    def __init__(
+        self,
+        connection: Connection,  # type: ignore[type-arg]
+        logger: AppLogger,
+    ) -> None:
         self.connection = connection
         self.logger = logger
 

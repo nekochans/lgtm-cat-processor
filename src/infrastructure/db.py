@@ -10,7 +10,7 @@ def get_env_var(var_name: str) -> str:
     return value
 
 
-def create_db_connection() -> Connection:
+def create_db_connection() -> Connection:  # type: ignore[type-arg]
     host = get_env_var("DB_HOSTNAME")
     user = get_env_var("DB_USERNAME")
     password = get_env_var("DB_PASSWORD")
