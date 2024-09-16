@@ -1,8 +1,7 @@
 from enum import Enum
-
 from domain.lgtm_image_repository_interface import LgtmImageRepositoryIntercase
 from domain.object_storage_repository_interface import ObjectStorageRepositoryInterface
-from infrastructure.db import create_db_connection
+from infrastructure.db import create_db
 from infrastructure.lgtm_image_repository import create_lgtm_image_repository
 from log.logging import AppLogger, setup_logger
 from infrastructure.s3_repository import (
@@ -46,13 +45,13 @@ def handle_process(
         return generate_lgtm_image_usecase.execute()
     elif process == ProcessType.STORE_TO_DB.value:
         try:
-            connection = create_db_connection()
+            sessionLocal = create_db()
         except Exception as e:
             logger.error(f"DBへの接続エラー: {e}", exc_info=True)
             raise
 
         lgtm_image_repository: LgtmImageRepositoryIntercase = (
-            create_lgtm_image_repository(connection, logger)
+            create_lgtm_image_repository(sessionLocal, logger)
         )
 
         store_to_db_usecase = StoreToDbUsecase(
@@ -60,7 +59,6 @@ def handle_process(
         )
 
         store_to_db_usecase.execute()
-        connection.close()
         return bucket_name, object_key
     else:
         logger.error(

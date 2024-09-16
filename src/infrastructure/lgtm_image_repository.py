@@ -1,42 +1,33 @@
-from typing import List, Tuple
-import pymysql
-from pymysql.connections import Connection
 from domain.lgtm_image_repository_interface import LgtmImageRepositoryIntercase
+from infrastructure.lgtm_image import LgtmImage
 from log.logging import AppLogger
+from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.exc import SQLAlchemyError
 
 
 def create_lgtm_image_repository(
-    connection: Connection,  # type: ignore[type-arg]
+    session_factory: sessionmaker[Session],
     logger: AppLogger,
 ) -> LgtmImageRepositoryIntercase:
-    return LtgmImageRepository(connection, logger)
+    return LtgmImageRepository(session_factory, logger)
 
 
 class LtgmImageRepository(LgtmImageRepositoryIntercase):
     def __init__(
-        self,
-        connection: Connection,  # type: ignore[type-arg]
-        logger: AppLogger,
+        self, session_factory: sessionmaker[Session], logger: AppLogger
     ) -> None:
-        self.connection = connection
+        self.session_factory = session_factory
         self.logger = logger
 
-    def save_lgtm_cat(
-        self,
-        file_name: str,
-        path: str,
-    ) -> None:
+    def save_lgtm_cat(self, file_name: str, path: str) -> None:
         self.logger.info("レコードのインサートを開始")
         try:
-            with self.connection.cursor() as cursor:
-                sql = "INSERT INTO lgtm_images(filename, `path`) VALUES (%s, %s)"
-                values: List[Tuple[str, str]] = [(file_name, path)]
-                cursor.executemany(sql, values)
+            with self.session_factory() as session:
+                lgtm_image = LgtmImage(filename=file_name, path=path)
+                session.add(lgtm_image)
+                session.commit()
+                self.logger.info("レコードのインサートが成功")
 
-            self.connection.commit()
-            self.logger.info(f"{len(values)} 件のレコードのインサートが成功")
-
-        except pymysql.Error as e:
+        except SQLAlchemyError as e:
             self.logger.error(f"レコードのインサート中にエラーが発生しました: {e}")
-            self.connection.rollback()
             raise
