@@ -1,4 +1,4 @@
-from domain.lgtm_image_repository_interface import LgtmImageRepositoryIntercase
+from domain.lgtm_image_repository_interface import LgtmImageRepositoryInterface
 from infrastructure.lgtm_image import LgtmImage
 from log.logging import AppLogger
 from sqlalchemy.orm import sessionmaker, Session
@@ -8,11 +8,11 @@ from sqlalchemy.exc import SQLAlchemyError
 def create_lgtm_image_repository(
     session_factory: sessionmaker[Session],
     logger: AppLogger,
-) -> LgtmImageRepositoryIntercase:
-    return LtgmImageRepository(session_factory, logger)
+) -> LgtmImageRepositoryInterface:
+    return LgtmImageRepository(session_factory, logger)
 
 
-class LtgmImageRepository(LgtmImageRepositoryIntercase):
+class LgtmImageRepository(LgtmImageRepositoryInterface):
     def __init__(
         self, session_factory: sessionmaker[Session], logger: AppLogger
     ) -> None:

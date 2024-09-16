@@ -1,5 +1,5 @@
 from enum import Enum
-from domain.lgtm_image_repository_interface import LgtmImageRepositoryIntercase
+from domain.lgtm_image_repository_interface import LgtmImageRepositoryInterface
 from domain.object_storage_repository_interface import ObjectStorageRepositoryInterface
 from infrastructure.db import create_db
 from infrastructure.lgtm_image_repository import create_lgtm_image_repository
@@ -50,7 +50,7 @@ def handle_process(
             logger.error(f"DBへの接続エラー: {e}", exc_info=True)
             raise
 
-        lgtm_image_repository: LgtmImageRepositoryIntercase = (
+        lgtm_image_repository: LgtmImageRepositoryInterface = (
             create_lgtm_image_repository(sessionLocal, logger)
         )
 

@@ -1,5 +1,5 @@
 import os
-from domain.lgtm_image_repository_interface import LgtmImageRepositoryIntercase
+from domain.lgtm_image_repository_interface import LgtmImageRepositoryInterface
 from log.logging import AppLogger
 
 
@@ -12,7 +12,7 @@ def extract_filename_without_ext(object_key: str) -> str:
 class StoreToDbUsecase:
     def __init__(
         self,
-        lgtm_image_repository: LgtmImageRepositoryIntercase,
+        lgtm_image_repository: LgtmImageRepositoryInterface,
         bucket_name: str,
         object_key: str,
         logger: AppLogger,
