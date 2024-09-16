@@ -30,4 +30,5 @@ class LgtmImageRepository(LgtmImageRepositoryInterface):
 
         except SQLAlchemyError as e:
             self.logger.error(f"レコードのインサート中にエラーが発生しました: {e}")
+            session.rollback()
             raise
