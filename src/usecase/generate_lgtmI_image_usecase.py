@@ -77,7 +77,7 @@ class GenerateLgtmImageUsecase:
             buffer.seek(0)
             return buffer
 
-    def execute(self) -> None:
+    def execute(self) -> tuple[str, str]:
         self.logger.info("LGTM画像の作成を開始")
         try:
             cat_image = self.s3repository.fetch_image(self.bucket_name, self.object_key)
@@ -97,6 +97,8 @@ class GenerateLgtmImageUsecase:
             )
 
             self.logger.info("LGTM画像の作成に成功")
+
+            return upload_bucket_name, upload_object_key
 
         except ValueError as e:
             self.logger.error(e, exc_info=True)

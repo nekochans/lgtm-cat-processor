@@ -33,6 +33,8 @@ def lambda_handler(event: Event, context: Context) -> Response:
 
     request_id = context.aws_request_id  # type: ignore
 
-    handle_process(request_id, process, bucket_name, object_key)
+    upload_bucket_name, upload_object_key = handle_process(
+        request_id, process, bucket_name, object_key
+    )
 
-    return format_response(bucket_name, object_key)
+    return format_response(upload_bucket_name, upload_object_key)
