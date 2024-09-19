@@ -1,0 +1,7 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+       - aws lambda update-function-code --function-name ${FUNCTION_NAME} --image-uri ${IMAGE_URI}
+       - aws lambda wait function-updated --function-name ${FUNCTION_NAME}

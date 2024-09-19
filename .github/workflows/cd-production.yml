@@ -7,10 +7,11 @@ on:
 
 env:
   ECR_REPOSITORY: prod-lgtm-image-processor
+  FUNCTION_NAME: prod-lgtm-image-processor
 
 jobs:
   build:
-    name: Build and Deploy to Production
+    name: Build Docker Image and Deploy to Lambda to Production
     timeout-minutes: 15
     runs-on: ubuntu-22.04
 
@@ -55,3 +56,15 @@ jobs:
           provenance: false
           tags: ${{ steps.meta.outputs.tags }}
           platforms: linux/arm64
+
+      - name: Deploy to Lambda
+        uses: aws-actions/aws-codebuild-run-build@v1
+        with:
+          project-name: prod-lgtm-image-processor-deploy
+          hide-cloudwatch-logs: true
+          buildspec-override: buildspec.yml
+          env-vars-for-codebuild: |
+            IMAGE_URI,
+            FUNCTION_NAME
+        env:
+          IMAGE_URI: ${{ steps.meta.outputs.tags }}
