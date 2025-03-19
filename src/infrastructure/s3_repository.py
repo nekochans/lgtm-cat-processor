@@ -36,5 +36,8 @@ class S3Repository(ObjectStorageRepositoryInterface):
         self.logger.info("画像のアップロードを開始")
 
         self.s3_client.put_object(
-            Bucket=bucket_name, Key=object_key, Body=processed_image
+            Bucket=bucket_name,
+            Key=object_key,
+            Body=processed_image,
+            ContentType="image/webp",
         )
