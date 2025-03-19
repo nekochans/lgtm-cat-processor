@@ -1,6 +1,5 @@
 import io
 import boto3
-import mimetypes
 from mypy_boto3_s3 import S3Client
 from domain.object_storage_repository_interface import ObjectStorageRepositoryInterface
 from log.logging import AppLogger
