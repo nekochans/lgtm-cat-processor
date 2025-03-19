@@ -16,13 +16,6 @@ def create_s3_repository(
     return S3Repository(s3_client, logger)
 
 
-def get_content_type(file_name: str) -> str:
-    content_type, _ = mimetypes.guess_type(file_name)
-    if content_type is None:
-        return "application/octet-stream"
-    return content_type
-
-
 class S3Repository(ObjectStorageRepositoryInterface):
     def __init__(self, s3_client: S3Client, logger: AppLogger) -> None:
         self.s3_client = s3_client
@@ -43,11 +36,9 @@ class S3Repository(ObjectStorageRepositoryInterface):
     ) -> None:
         self.logger.info("画像のアップロードを開始")
 
-        content_type = get_content_type(object_key)
-
         self.s3_client.put_object(
             Bucket=bucket_name,
             Key=object_key,
             Body=processed_image,
-            ContentType=content_type,
+            ContentType="image/webp",
         )
