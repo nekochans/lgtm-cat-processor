@@ -14,19 +14,17 @@ dependencies = [
 ]
 readme = "README.md"
 requires-python = ">= 3.8"
-    
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.rye]
-managed = true
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "ruff>=0.6.3",
     "mypy>=1.11.2",
     "types-pymysql>=1.1.0.20240524",
 ]
-virtual = true
 
 [tool.hatch.metadata]
 allow-direct-references = true

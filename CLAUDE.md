@@ -51,11 +51,11 @@ Lambdaハンドラー（`main.py:lambda_handler`）は`handle_process`経由で3
 
 ## 開発コマンド
 
-依存関係は**Rye**で管理（pipではありません）：
+依存関係は**uv**で管理（pipではありません）：
 
 ```bash
 # 依存関係のインストール/同期
-rye sync
+uv sync
 
 # リント
 make lint              # ruffでチェック
@@ -82,9 +82,9 @@ make typecheck         # mypy --strictで実行
 ## テストとCI
 
 CIワークフロー（`.github/workflows/ci.yml`）は3つのジョブを実行：
-1. `rye run ruff check` - リント
-2. `rye run ruff format --check` - フォーマット検証
-3. `rye run mypy src/ --strict` - 型チェック
+1. `uv run ruff check` - リント
+2. `uv run ruff format --check` - フォーマット検証
+3. `uv run mypy src/ --strict` - 型チェック
 
 **現在、ユニットテストはコードベースに存在しません。**
 
