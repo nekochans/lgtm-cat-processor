@@ -12,6 +12,9 @@ def build_upload_object_key(object_key: str) -> str:
 
 
 class GenerateLgtmImageUsecase:
+    # 輝度の閾値（0-255）。この値より大きい場合は黒文字、小さい場合は白文字
+    BRIGHTNESS_THRESHOLD = 127
+
     def __init__(
         self,
         s3repository: ObjectStorageRepositoryInterface,
@@ -26,6 +29,38 @@ class GenerateLgtmImageUsecase:
         )
         self.s3repository = s3repository
         self.logger = logger
+
+    def get_average_brightness(
+        self, img: Image.Image, bbox: tuple[int, int, int, int]
+    ) -> float:
+        # bboxから幅と高さを計算
+        left, top, right, bottom = bbox
+        width = right - left
+        height = bottom - top
+
+        # 空のまたはゼロ面積のbboxに対する防御的チェック
+        if width <= 0 or height <= 0:
+            return 0.0
+
+        # 指定領域を切り出してグレースケール化
+        cropped = img.crop(bbox).convert("L")
+
+        # 平均輝度を計算
+        pixels = list(cropped.getdata())
+
+        # 空のピクセルシーケンスに対する防御的チェック
+        if len(pixels) == 0:
+            return 0.0
+
+        average_brightness = float(sum(pixels) / len(pixels))
+
+        return average_brightness
+
+    def choose_text_color_by_brightness(
+        self, brightness: float, threshold: int = BRIGHTNESS_THRESHOLD
+    ) -> tuple[int, int, int]:
+        # 輝度が閾値より大きい（明るい）場合は黒、それ以外は白
+        return (0, 0, 0) if brightness > threshold else (255, 255, 255)
 
     def gemerate_lgtm_image(self, image_data: bytes) -> io.BytesIO:
         with Image.open(io.BytesIO(image_data)) as img:
@@ -68,9 +103,20 @@ class GenerateLgtmImageUsecase:
             y_lgtm = (new_height / 2) - (text_height_lgtm / 2) - descender
             y_meow = y_lgtm + text_height_lgtm - text_height_meow
 
+            # テキスト描画範囲のbboxを作成
+            left = int(x_lgtm)
+            top = int(y_lgtm)
+            right = int(x_lgtm + total_width)
+            bottom = int(y_lgtm + text_height_lgtm)
+            text_bbox = (left, top, right, bottom)
+
+            # 背景の輝度を算出
+            brightness = self.get_average_brightness(img, text_bbox)
+            text_color = self.choose_text_color_by_brightness(brightness)
+
             # テキストを描画
-            draw.text((x_lgtm, y_lgtm), lgtm_text, font=font_lgtm, fill=(255, 255, 255))
-            draw.text((x_meow, y_meow), meow_text, font=font_meow, fill=(255, 255, 255))
+            draw.text((x_lgtm, y_lgtm), lgtm_text, font=font_lgtm, fill=text_color)
+            draw.text((x_meow, y_meow), meow_text, font=font_meow, fill=text_color)
 
             buffer = io.BytesIO()
             img.save(buffer, format="WEBP")
