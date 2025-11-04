@@ -13,7 +13,7 @@ def build_upload_object_key(object_key: str) -> str:
 
 class GenerateLgtmImageUsecase:
     # 輝度の閾値（0-255）。この値より大きい場合は黒文字、小さい場合は白文字
-    BRIGHTNESS_THRESHOLD = 127
+    BRIGHTNESS_THRESHOLD = 160
 
     def __init__(
         self,
