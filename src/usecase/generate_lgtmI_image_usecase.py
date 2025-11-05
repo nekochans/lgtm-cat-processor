@@ -207,10 +207,20 @@ class GenerateLgtmImageUsecase:
 
         # 猫の顔がない場合は中央
         if not cat_faces:
+            self.logger.info(
+                "テキストポジション決定",
+                extra={
+                    "position": "center",
+                    "reason": "no_cat_faces",
+                    "x": image_width / 2 - text_width / 2,
+                    "y": image_height / 2 - text_height / 2,
+                },
+            )
             return image_width / 2 - text_width / 2, image_height / 2 - text_height / 2
 
         # 各候補位置と顔の重なりをチェック
         best_position = None
+        best_position_name = None
         best_score = float("-inf")
 
         for name, x, y in candidates:
@@ -230,16 +240,37 @@ class GenerateLgtmImageUsecase:
             if min_overlap > best_score:
                 best_score = min_overlap
                 best_position = (x, y)
+                best_position_name = name
 
         # デフォルトは下部中央
-        return (
-            best_position
-            if best_position
-            else (
-                image_width / 2 - text_width / 2,
-                image_height * 0.85,
+        if best_position:
+            self.logger.info(
+                "テキストポジション決定",
+                extra={
+                    "position": best_position_name,
+                    "x": best_position[0],
+                    "y": best_position[1],
+                    "score": best_score,
+                    "cat_faces_count": len(cat_faces),
+                },
             )
-        )
+            return best_position
+        else:
+            default_x = image_width / 2 - text_width / 2
+            default_y = image_height * 0.85
+            self.logger.info(
+                "テキストポジション決定",
+                extra={
+                    "position": "bottom",
+                    "reason": "default",
+                    "x": default_x,
+                    "y": default_y,
+                },
+            )
+            return (
+                default_x,
+                default_y,
+            )
 
     def gemerate_lgtm_image(self, image_data: bytes) -> io.BytesIO:
         # 猫の顔を検出（リサイズ前の画像で検出）
