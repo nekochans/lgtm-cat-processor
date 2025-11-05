@@ -168,8 +168,7 @@ class GenerateLgtmImageUsecase:
         self,
         image_width: int,
         image_height: int,
-        text_width: float,
-        text_height: float,
+        text_bbox: tuple[float, float, float, float],
         cat_faces: list[tuple[int, int, int, int]],
     ) -> tuple[float, float]:
         """
@@ -178,45 +177,62 @@ class GenerateLgtmImageUsecase:
         Args:
             image_width: 画像の幅
             image_height: 画像の高さ
-            text_width: テキスト全体の幅
-            text_height: テキスト全体の高さ
+            text_bbox: テキストのbbox (left, top, right, bottom)
+                      textbbox((0, 0), text, font) の結果
             cat_faces: 検出された猫の顔のリスト [(x, y, w, h), ...]
 
         Returns:
-            (x, y) テキストの左上座標
+            (x, y) テキストの描画位置（draw.textに渡す座標）
         """
-        # 配置候補: 下部、左下、右下、中央
-        candidates = [
+        bbox_left, bbox_top, bbox_right, bbox_bottom = text_bbox
+        text_width = bbox_right - bbox_left
+        text_height = bbox_bottom - bbox_top
+
+        # bbox の中心のオフセット
+        bbox_center_x = (bbox_left + bbox_right) / 2
+        bbox_center_y = (bbox_top + bbox_bottom) / 2
+
+        # 配置候補の「視覚的な中心位置」を定義
+        candidate_centers = [
+            ("bottom", image_width / 2, image_height * 0.85 - text_height / 2),
             (
-                "bottom",
-                image_width / 2 - text_width / 2,
-                image_height * 0.85 - text_height,
+                "bottom-left",
+                image_width * 0.1 + text_width / 2,
+                image_height * 0.85 - text_height / 2,
             ),
-            ("bottom-left", image_width * 0.1, image_height * 0.85 - text_height),
             (
                 "bottom-right",
-                image_width - text_width - image_width * 0.1,
-                image_height * 0.85 - text_height,
+                image_width - image_width * 0.1 - text_width / 2,
+                image_height * 0.85 - text_height / 2,
             ),
-            (
-                "center",
-                image_width / 2 - text_width / 2,
-                image_height / 2 - text_height / 2,
-            ),
+            ("center", image_width / 2, image_height / 2),
+        ]
+
+        # 各中心位置から実際の描画位置を計算
+        candidates = [
+            (name, center_x - bbox_center_x, center_y - bbox_center_y)
+            for name, center_x, center_y in candidate_centers
         ]
 
         # 猫の顔がない場合は中央
         if not cat_faces:
+            center_x = image_width / 2
+            center_y = image_height / 2
+            x = center_x - bbox_center_x
+            y = center_y - bbox_center_y
             self.logger.info(
                 "テキストポジション決定",
                 extra={
                     "position": "center",
                     "reason": "no_cat_faces",
-                    "x": image_width / 2 - text_width / 2,
-                    "y": image_height / 2 - text_height / 2,
+                    "x": x,
+                    "y": y,
+                    "bbox_center_x": bbox_center_x,
+                    "bbox_center_y": bbox_center_y,
+                    "image_center_y": center_y,
                 },
             )
-            return image_width / 2 - text_width / 2, image_height / 2 - text_height / 2
+            return x, y
 
         # 各候補位置と顔の重なりをチェック
         best_position = None
@@ -225,15 +241,16 @@ class GenerateLgtmImageUsecase:
 
         for name, x, y in candidates:
             # 画像境界内に収まるように調整
-            x = max(0, min(x, image_width - text_width))
-            y = max(0, min(y, image_height - text_height))
+            x = max(-bbox_left, min(x, image_width - text_width - bbox_left))
+            y = max(-bbox_top, min(y, image_height - text_height - bbox_top))
 
-            text_bbox = (x, y, x + text_width, y + text_height)
+            # 実際の描画時の bbox を計算
+            actual_bbox = (x + bbox_left, y + bbox_top, x + bbox_right, y + bbox_bottom)
 
             # すべての顔との最小距離を計算
             min_overlap = float("inf")
             for face in cat_faces:
-                overlap = self.calculate_overlap(text_bbox, face)
+                overlap = self.calculate_overlap(actual_bbox, face)
                 min_overlap = min(min_overlap, overlap)
 
             # 重なりが最小の位置を選択
@@ -256,21 +273,21 @@ class GenerateLgtmImageUsecase:
             )
             return best_position
         else:
-            default_x = image_width / 2 - text_width / 2
-            default_y = image_height * 0.85
+            # デフォルト: 下部中央
+            center_x = image_width / 2
+            center_y = image_height * 0.85
+            x = center_x - bbox_center_x
+            y = center_y - text_height / 2 - bbox_top
             self.logger.info(
                 "テキストポジション決定",
                 extra={
                     "position": "bottom",
                     "reason": "default",
-                    "x": default_x,
-                    "y": default_y,
+                    "x": x,
+                    "y": y,
                 },
             )
-            return (
-                default_x,
-                default_y,
-            )
+            return x, y
 
     def gemerate_lgtm_image(self, image_data: bytes) -> io.BytesIO:
         # 猫の顔を検出（リサイズ前の画像で検出）
@@ -314,28 +331,42 @@ class GenerateLgtmImageUsecase:
             bbox_lgtm = draw.textbbox((0, 0), lgtm_text, font=font_lgtm)
             bbox_meow = draw.textbbox((0, 0), meow_text, font=font_meow)
 
+            self.logger.info(
+                "テキストbbox情報",
+                extra={
+                    "bbox_lgtm": bbox_lgtm,
+                    "bbox_meow": bbox_meow,
+                    "image_size": (new_width, new_height),
+                },
+            )
+
             text_width_lgtm = bbox_lgtm[2] - bbox_lgtm[0]
             text_height_lgtm = bbox_lgtm[3] - bbox_lgtm[1]
             text_width_meow = bbox_meow[2] - bbox_meow[0]
             text_height_meow = bbox_meow[3] - bbox_meow[1]
 
-            # テキスト全体のサイズ
-            total_width = text_width_lgtm + text_width_meow
+            # テキスト全体のbbox（LGTMとeowを合わせた範囲）
+            total_bbox = (
+                bbox_lgtm[0],
+                bbox_lgtm[1],
+                bbox_lgtm[0] + text_width_lgtm + text_width_meow,
+                bbox_lgtm[3],
+            )
 
             # 猫の顔を避けてテキストの最適位置を計算
             x_lgtm, y_lgtm = self.calculate_text_position(
-                new_width, new_height, total_width, text_height_lgtm, cat_faces
+                new_width, new_height, total_bbox, cat_faces
             )
 
             # meowの位置を計算
             x_meow = x_lgtm + text_width_lgtm
             y_meow = y_lgtm + text_height_lgtm - text_height_meow
 
-            # テキスト描画範囲のbboxを作成
-            left = int(x_lgtm)
-            top = int(y_lgtm)
-            right = int(x_lgtm + total_width)
-            bottom = int(y_lgtm + text_height_lgtm)
+            # テキスト描画範囲のbboxを作成（輝度計算用）
+            left = int(x_lgtm + bbox_lgtm[0])
+            top = int(y_lgtm + bbox_lgtm[1])
+            right = int(x_lgtm + bbox_lgtm[0] + text_width_lgtm + text_width_meow)
+            bottom = int(y_lgtm + bbox_lgtm[3])
             text_bbox = (left, top, right, bottom)
 
             # 背景の輝度を算出
