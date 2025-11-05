@@ -22,7 +22,7 @@ class GenerateLgtmImageUsecase:
     # scaleFactor: 画像を縮小する際のスケール係数（1.1 = 10%ずつ縮小）
     FACE_DETECTION_SCALE_FACTOR = 1.1
     # minNeighbors: 検出を確定するために必要な近傍矩形の数（大きいほど誤検出が減る）
-    FACE_DETECTION_MIN_NEIGHBORS = 5
+    FACE_DETECTION_MIN_NEIGHBORS = 3
     # minSize: 検出する顔の最小サイズ（ピクセル）
     FACE_DETECTION_MIN_SIZE = (30, 30)
 
