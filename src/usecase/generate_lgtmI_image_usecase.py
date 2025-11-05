@@ -187,12 +187,16 @@ class GenerateLgtmImageUsecase:
         """
         # 配置候補: 下部、左下、右下、中央
         candidates = [
-            ("bottom", image_width / 2 - text_width / 2, image_height * 0.85),
-            ("bottom-left", image_width * 0.1, image_height * 0.85),
+            (
+                "bottom",
+                image_width / 2 - text_width / 2,
+                image_height * 0.85 - text_height,
+            ),
+            ("bottom-left", image_width * 0.1, image_height * 0.85 - text_height),
             (
                 "bottom-right",
                 image_width - text_width - image_width * 0.1,
-                image_height * 0.85,
+                image_height * 0.85 - text_height,
             ),
             (
                 "center",
