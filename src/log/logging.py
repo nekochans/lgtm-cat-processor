@@ -33,6 +33,36 @@ class JSONFormatter(logging.Formatter):
         if record.exc_info:
             log_data["exception"] = self.formatException(record.exc_info)
 
+        # extraフィールドで渡されたカスタム属性を追加
+        # LogRecordの標準属性を除外
+        standard_attrs = {
+            "name",
+            "msg",
+            "args",
+            "created",
+            "filename",
+            "funcName",
+            "levelname",
+            "levelno",
+            "lineno",
+            "module",
+            "msecs",
+            "message",
+            "pathname",
+            "process",
+            "processName",
+            "relativeCreated",
+            "thread",
+            "threadName",
+            "exc_info",
+            "exc_text",
+            "stack_info",
+            "taskName",
+        }
+        for key, value in record.__dict__.items():
+            if key not in standard_attrs and key not in log_data:
+                log_data[key] = value
+
         def json_default(obj: Any) -> str:
             return str(obj)
 
