@@ -247,15 +247,16 @@ class GenerateLgtmImageUsecase:
             # 実際の描画時の bbox を計算
             actual_bbox = (x + bbox_left, y + bbox_top, x + bbox_right, y + bbox_bottom)
 
-            # すべての顔との最小距離を計算
-            min_overlap = float("inf")
+            # すべての顔との重なりの合計を計算
+            total_overlap = 0.0
             for face in cat_faces:
                 overlap = self.calculate_overlap(actual_bbox, face)
-                min_overlap = min(min_overlap, overlap)
+                if overlap != float("inf"):  # 重なりがある場合のみ加算
+                    total_overlap += overlap
 
-            # 重なりが最小の位置を選択
-            if min_overlap > best_score:
-                best_score = min_overlap
+            # 重なりの合計が最小（0に最も近い負の値）の位置を選択
+            if total_overlap > best_score:
+                best_score = total_overlap
                 best_position = (x, y)
                 best_position_name = name
 
