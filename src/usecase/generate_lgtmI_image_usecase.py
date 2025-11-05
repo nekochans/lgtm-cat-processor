@@ -239,6 +239,8 @@ class GenerateLgtmImageUsecase:
         best_position_name = None
         best_score = float("-inf")
 
+        candidates_debug = []
+
         for name, x, y in candidates:
             # 画像境界内に収まるように調整
             x = max(-bbox_left, min(x, image_width - text_width - bbox_left))
@@ -249,16 +251,41 @@ class GenerateLgtmImageUsecase:
 
             # すべての顔との重なりの合計を計算
             total_overlap = 0.0
+            overlaps_detail = []
             for face in cat_faces:
                 overlap = self.calculate_overlap(actual_bbox, face)
+                overlaps_detail.append(
+                    {
+                        "face": face,
+                        "overlap": overlap,
+                    }
+                )
                 if overlap != float("inf"):  # 重なりがある場合のみ加算
                     total_overlap += overlap
+
+            candidates_debug.append(
+                {
+                    "name": name,
+                    "x": x,
+                    "y": y,
+                    "actual_bbox": actual_bbox,
+                    "total_overlap": total_overlap,
+                    "overlaps_detail": overlaps_detail,
+                }
+            )
 
             # 重なりの合計が最小（0に最も近い負の値）の位置を選択
             if total_overlap > best_score:
                 best_score = total_overlap
                 best_position = (x, y)
                 best_position_name = name
+
+        self.logger.info(
+            "候補位置の評価結果",
+            extra={
+                "candidates": candidates_debug,
+            },
+        )
 
         # デフォルトは下部中央
         if best_position:
@@ -319,6 +346,17 @@ class GenerateLgtmImageUsecase:
                 )
                 for (x, y, w, h) in cat_faces_original
             ]
+
+            self.logger.info(
+                "猫の顔検出結果",
+                extra={
+                    "original_size": (original_width, original_height),
+                    "resized_size": (new_width, new_height),
+                    "scale": (scale_x, scale_y),
+                    "cat_faces_original": cat_faces_original,
+                    "cat_faces_scaled": cat_faces,
+                },
+            )
 
             draw = ImageDraw.Draw(img)
             font_path = self.font_path
