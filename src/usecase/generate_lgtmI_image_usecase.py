@@ -19,12 +19,12 @@ class GenerateLgtmImageUsecase:
     BRIGHTNESS_THRESHOLD = 160
 
     # 猫顔検出のパラメータ
-    # scaleFactor: 画像を縮小する際のスケール係数（1.1 = 10%ずつ縮小）
-    FACE_DETECTION_SCALE_FACTOR = 1.1
-    # minNeighbors: 検出を確定するために必要な近傍矩形の数（大きいほど誤検出が減る）
-    FACE_DETECTION_MIN_NEIGHBORS = 3
+    # scaleFactor: 画像を縮小する際のスケール係数（1.05 = 5%ずつ縮小、より細かく検出）
+    FACE_DETECTION_SCALE_FACTOR = 1.05
+    # minNeighbors: 検出を確定するために必要な近傍矩形の数（小さいほど検出感度が高い）
+    FACE_DETECTION_MIN_NEIGHBORS = 1
     # minSize: 検出する顔の最小サイズ（ピクセル）
-    FACE_DETECTION_MIN_SIZE = (30, 30)
+    FACE_DETECTION_MIN_SIZE = (20, 20)
 
     def __init__(
         self,
@@ -103,7 +103,26 @@ class GenerateLgtmImageUsecase:
             self.logger.warning("画像のデコードに失敗しました。顔検出をスキップします")
             return []
 
+        img_height, img_width = img_cv.shape[:2]
         gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+
+        # 画像サイズに応じた最小顔サイズを計算
+        # 短辺の3%を最小サイズとする（バランスを取った値）
+        min_dimension = min(img_width, img_height)
+        dynamic_min_size = int(min_dimension * 0.03)
+        # 最小値を20pxに制限（極端に小さい画像への対応）
+        dynamic_min_size = max(20, dynamic_min_size)
+        min_face_size = (dynamic_min_size, dynamic_min_size)
+
+        self.logger.info(
+            "顔検出パラメータ",
+            extra={
+                "image_size": (img_width, img_height),
+                "min_dimension": min_dimension,
+                "dynamic_min_size": dynamic_min_size,
+                "min_face_size": min_face_size,
+            },
+        )
 
         # カスケードファイルのパス
         cascade_path = os.path.join(
@@ -121,15 +140,25 @@ class GenerateLgtmImageUsecase:
             )
             return []
 
-        # 顔検出（クラス変数を使用）
+        # 顔検出（動的に計算した最小サイズを使用）
         faces = cat_cascade.detectMultiScale(
             gray,
             scaleFactor=self.FACE_DETECTION_SCALE_FACTOR,
             minNeighbors=self.FACE_DETECTION_MIN_NEIGHBORS,
-            minSize=self.FACE_DETECTION_MIN_SIZE,
+            minSize=min_face_size,
         )
 
-        return [(int(x), int(y), int(w), int(h)) for (x, y, w, h) in faces]
+        faces_list = [(int(x), int(y), int(w), int(h)) for (x, y, w, h) in faces]
+
+        self.logger.info(
+            "顔検出の詳細",
+            extra={
+                "detected_faces_count": len(faces_list),
+                "detected_faces": faces_list,
+            },
+        )
+
+        return faces_list
 
     def calculate_overlap(
         self,
