@@ -13,4 +13,9 @@ COPY src ${LAMBDA_TASK_ROOT}
 COPY fonts ${LAMBDA_TASK_ROOT}/fonts
 
 RUN PYTHONDONTWRITEBYTECODE=1 pip install --no-cache-dir -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
+
+RUN mkdir -p ${LAMBDA_TASK_ROOT}/cascades && \
+    curl -L -o ${LAMBDA_TASK_ROOT}/cascades/haarcascade_frontalcatface_extended.xml \
+    https://raw.githubusercontent.com/opencv/opencv/4.12.0/data/haarcascades/haarcascade_frontalcatface_extended.xml
+
 CMD ["main.lambda_handler"]

@@ -1,5 +1,8 @@
+# 絶対厳守：編集前に必ずAI実装ルールを読む
 import io
 import os
+import cv2
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from domain.object_storage_repository_interface import ObjectStorageRepositoryInterface
 from log.logging import AppLogger
@@ -14,6 +17,14 @@ def build_upload_object_key(object_key: str) -> str:
 class GenerateLgtmImageUsecase:
     # 輝度の閾値（0-255）。この値より大きい場合は黒文字、小さい場合は白文字
     BRIGHTNESS_THRESHOLD = 160
+
+    # 猫顔検出のパラメータ
+    # scaleFactor: 画像を縮小する際のスケール係数（1.1 = 10%ずつ縮小）
+    FACE_DETECTION_SCALE_FACTOR = 1.1
+    # minNeighbors: 検出を確定するために必要な近傍矩形の数（大きいほど誤検出が減る）
+    FACE_DETECTION_MIN_NEIGHBORS = 5
+    # minSize: 検出する顔の最小サイズ（ピクセル）
+    FACE_DETECTION_MIN_SIZE = (30, 30)
 
     def __init__(
         self,
@@ -33,17 +44,29 @@ class GenerateLgtmImageUsecase:
     def get_average_brightness(
         self, img: Image.Image, bbox: tuple[int, int, int, int]
     ) -> float:
-        # bboxから幅と高さを計算
         left, top, right, bottom = bbox
+
+        # bboxを画像サイズ内にクリッピング
+        img_width, img_height = img.size
+        left = max(0, min(left, img_width))
+        top = max(0, min(top, img_height))
+        right = max(0, min(right, img_width))
+        bottom = max(0, min(bottom, img_height))
+
+        # クリッピング後の幅と高さを計算
         width = right - left
         height = bottom - top
 
         # 空のまたはゼロ面積のbboxに対する防御的チェック
         if width <= 0 or height <= 0:
+            self.logger.warning(
+                f"輝度測定領域が無効です: bbox=({left}, {top}, {right}, {bottom}), "
+                f"image_size=({img_width}, {img_height})"
+            )
             return 0.0
 
         # 指定領域を切り出してグレースケール化
-        cropped = img.crop(bbox).convert("L")
+        cropped = img.crop((left, top, right, bottom)).convert("L")
 
         # 平均輝度を計算
         pixels = list(cropped.getdata())
@@ -62,19 +85,187 @@ class GenerateLgtmImageUsecase:
         # 輝度が閾値より大きい（明るい）場合は黒、それ以外は白
         return (0, 0, 0) if brightness > threshold else (255, 255, 255)
 
+    def detect_cat_faces(self, image_data: bytes) -> list[tuple[int, int, int, int]]:
+        """
+        猫の顔を検出する
+
+        Args:
+            image_data: 画像のバイトデータ
+
+        Returns:
+            list of (x, y, width, height) tuples - 検出された猫の顔の座標とサイズ
+        """
+        # バイトデータをnumpy配列に変換
+        nparr = np.frombuffer(image_data, np.uint8)
+        img_cv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        if img_cv is None:
+            self.logger.warning("画像のデコードに失敗しました。顔検出をスキップします")
+            return []
+
+        gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+
+        # カスケードファイルのパス
+        cascade_path = os.path.join(
+            os.getenv("LAMBDA_TASK_ROOT", "."),
+            "cascades",
+            "haarcascade_frontalcatface_extended.xml",
+        )
+
+        cat_cascade = cv2.CascadeClassifier(cascade_path)
+
+        # カスケードファイルのロード失敗をチェック
+        if cat_cascade.empty():
+            self.logger.warning(
+                f"カスケードファイルの読み込みに失敗しました: {cascade_path}. 顔検出をスキップします"
+            )
+            return []
+
+        # 顔検出（クラス変数を使用）
+        faces = cat_cascade.detectMultiScale(
+            gray,
+            scaleFactor=self.FACE_DETECTION_SCALE_FACTOR,
+            minNeighbors=self.FACE_DETECTION_MIN_NEIGHBORS,
+            minSize=self.FACE_DETECTION_MIN_SIZE,
+        )
+
+        return [(int(x), int(y), int(w), int(h)) for (x, y, w, h) in faces]
+
+    def calculate_overlap(
+        self,
+        text_bbox: tuple[float, float, float, float],
+        face_bbox: tuple[int, int, int, int],
+    ) -> float:
+        """
+        2つのbboxの重なり度合いを計算（負の重なり面積を返す）
+
+        Args:
+            text_bbox: (x_min, y_min, x_max, y_max) テキストのbbox
+            face_bbox: (x, y, width, height) 猫の顔のbbox
+
+        Returns:
+            重なり面積の負の値（重なりが少ないほど大きい値）
+            重なりがない場合は float('inf')
+        """
+        text_x_min, text_y_min, text_x_max, text_y_max = text_bbox
+        face_x_min, face_y_min, face_width, face_height = face_bbox
+        face_x_max = face_x_min + face_width
+        face_y_max = face_y_min + face_height
+
+        # 重なり領域の計算
+        inter_x_min = max(text_x_min, face_x_min)
+        inter_y_min = max(text_y_min, face_y_min)
+        inter_x_max = min(text_x_max, face_x_max)
+        inter_y_max = min(text_y_max, face_y_max)
+
+        if inter_x_min >= inter_x_max or inter_y_min >= inter_y_max:
+            return float("inf")  # 重なりなし
+
+        inter_area = (inter_x_max - inter_x_min) * (inter_y_max - inter_y_min)
+        return -inter_area  # 重なりが少ないほど大きい値
+
+    def calculate_text_position(
+        self,
+        image_width: int,
+        image_height: int,
+        text_width: float,
+        text_height: float,
+        cat_faces: list[tuple[int, int, int, int]],
+    ) -> tuple[float, float]:
+        """
+        猫の顔を避けてテキストの最適位置を計算
+
+        Args:
+            image_width: 画像の幅
+            image_height: 画像の高さ
+            text_width: テキスト全体の幅
+            text_height: テキスト全体の高さ
+            cat_faces: 検出された猫の顔のリスト [(x, y, w, h), ...]
+
+        Returns:
+            (x, y) テキストの左上座標
+        """
+        # 配置候補: 下部、左下、右下、中央
+        candidates = [
+            ("bottom", image_width / 2 - text_width / 2, image_height * 0.85),
+            ("bottom-left", image_width * 0.1, image_height * 0.85),
+            (
+                "bottom-right",
+                image_width - text_width - image_width * 0.1,
+                image_height * 0.85,
+            ),
+            (
+                "center",
+                image_width / 2 - text_width / 2,
+                image_height / 2 - text_height / 2,
+            ),
+        ]
+
+        # 猫の顔がない場合は中央
+        if not cat_faces:
+            return image_width / 2 - text_width / 2, image_height / 2 - text_height / 2
+
+        # 各候補位置と顔の重なりをチェック
+        best_position = None
+        best_score = float("-inf")
+
+        for name, x, y in candidates:
+            # 画像境界内に収まるように調整
+            x = max(0, min(x, image_width - text_width))
+            y = max(0, min(y, image_height - text_height))
+
+            text_bbox = (x, y, x + text_width, y + text_height)
+
+            # すべての顔との最小距離を計算
+            min_overlap = float("inf")
+            for face in cat_faces:
+                overlap = self.calculate_overlap(text_bbox, face)
+                min_overlap = min(min_overlap, overlap)
+
+            # 重なりが最小の位置を選択
+            if min_overlap > best_score:
+                best_score = min_overlap
+                best_position = (x, y)
+
+        # デフォルトは下部中央
+        return (
+            best_position
+            if best_position
+            else (
+                image_width / 2 - text_width / 2,
+                image_height * 0.85,
+            )
+        )
+
     def gemerate_lgtm_image(self, image_data: bytes) -> io.BytesIO:
+        # 猫の顔を検出（リサイズ前の画像で検出）
+        cat_faces_original = self.detect_cat_faces(image_data)
+
         with Image.open(io.BytesIO(image_data)) as img:
-            width, height = img.size
+            original_width, original_height = img.size
 
             # アスペクト比を維持しながら幅または高さを調整する
-            if width > height:
+            if original_width > original_height:
                 new_width = 400
-                new_height = int((height / width) * new_width)
+                new_height = int((original_height / original_width) * new_width)
             else:
                 new_height = 400
-                new_width = int((width / height) * new_height)
+                new_width = int((original_width / original_height) * new_height)
 
             img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+            # 検出された顔の座標をリサイズ後の画像サイズに合わせてスケーリング
+            scale_x = new_width / original_width
+            scale_y = new_height / original_height
+            cat_faces = [
+                (
+                    int(x * scale_x),
+                    int(y * scale_y),
+                    int(w * scale_x),
+                    int(h * scale_y),
+                )
+                for (x, y, w, h) in cat_faces_original
+            ]
 
             draw = ImageDraw.Draw(img)
             font_path = self.font_path
@@ -93,14 +284,16 @@ class GenerateLgtmImageUsecase:
             text_width_meow = bbox_meow[2] - bbox_meow[0]
             text_height_meow = bbox_meow[3] - bbox_meow[1]
 
-            _, descender = font_lgtm.getmetrics()
-
-            # 画像の中央にテキストを配置するための座標計算
+            # テキスト全体のサイズ
             total_width = text_width_lgtm + text_width_meow
-            x_lgtm = (new_width / 2) - (total_width / 2)
-            x_meow = x_lgtm + text_width_lgtm
 
-            y_lgtm = (new_height / 2) - (text_height_lgtm / 2) - descender
+            # 猫の顔を避けてテキストの最適位置を計算
+            x_lgtm, y_lgtm = self.calculate_text_position(
+                new_width, new_height, total_width, text_height_lgtm, cat_faces
+            )
+
+            # meowの位置を計算
+            x_meow = x_lgtm + text_width_lgtm
             y_meow = y_lgtm + text_height_lgtm - text_height_meow
 
             # テキスト描画範囲のbboxを作成
