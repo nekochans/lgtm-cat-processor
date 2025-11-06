@@ -1,6 +1,7 @@
 # 絶対厳守：編集前に必ずAI実装ルールを読む
 from PIL import Image
 
+
 class BrightnessCalculator:
     """
     画像の輝度計算とテキスト色の選択を行うドメインサービス
