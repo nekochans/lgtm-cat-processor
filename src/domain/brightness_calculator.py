@@ -70,10 +70,10 @@ class BrightnessCalculator:
             threshold: 閾値 (省略時は BRIGHTNESS_THRESHOLD を使用)
 
         Returns:
-            RGB色のタプル: 明るい背景なら黒(0,0,0)、暗い背景なら白(255,255,255)
+            RGB色のタプル: 明るい背景なら濃いグレー(30,30,30)、暗い背景なら白(255,255,255)
         """
         if threshold is None:
             threshold = self.BRIGHTNESS_THRESHOLD
 
-        # 輝度が閾値より大きい(明るい)場合は黒、それ以外は白
-        return (0, 0, 0) if brightness > threshold else (255, 255, 255)
+        # 輝度が閾値より大きい(明るい)場合は濃いグレー、それ以外は白
+        return (30, 30, 30) if brightness > threshold else (255, 255, 255)
