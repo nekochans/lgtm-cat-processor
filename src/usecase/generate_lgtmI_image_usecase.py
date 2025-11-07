@@ -1,7 +1,13 @@
-import io
+# 絶対厳守：編集前に必ずAI実装ルールを読む
 import os
-from PIL import Image, ImageDraw, ImageFont
-from domain.object_storage_repository_interface import ObjectStorageRepositoryInterface
+
+from domain.cat_detection_repository_interface import (
+    CatDetectionRepositoryInterface,
+)
+from domain.lgtm_image_generator import LgtmImageGenerator
+from domain.object_storage_repository_interface import (
+    ObjectStorageRepositoryInterface,
+)
 from log.logging import AppLogger
 
 
@@ -12,123 +18,38 @@ def build_upload_object_key(object_key: str) -> str:
 
 
 class GenerateLgtmImageUsecase:
-    # 輝度の閾値（0-255）。この値より大きい場合は黒文字、小さい場合は白文字
-    BRIGHTNESS_THRESHOLD = 160
-
     def __init__(
         self,
         s3repository: ObjectStorageRepositoryInterface,
+        cat_detection_repository: CatDetectionRepositoryInterface,
         bucket_name: str,
         object_key: str,
         logger: AppLogger,
     ) -> None:
         self.bucket_name = bucket_name
         self.object_key = object_key
-        self.font_path = os.path.join(
-            os.environ["LAMBDA_TASK_ROOT"], "fonts", "MPLUSRounded1c-Medium.ttf"
-        )
         self.s3repository = s3repository
+        self.cat_detection_repository = cat_detection_repository
         self.logger = logger
-
-    def get_average_brightness(
-        self, img: Image.Image, bbox: tuple[int, int, int, int]
-    ) -> float:
-        # bboxから幅と高さを計算
-        left, top, right, bottom = bbox
-        width = right - left
-        height = bottom - top
-
-        # 空のまたはゼロ面積のbboxに対する防御的チェック
-        if width <= 0 or height <= 0:
-            return 0.0
-
-        # 指定領域を切り出してグレースケール化
-        cropped = img.crop(bbox).convert("L")
-
-        # 平均輝度を計算
-        pixels = list(cropped.getdata())
-
-        # 空のピクセルシーケンスに対する防御的チェック
-        if len(pixels) == 0:
-            return 0.0
-
-        average_brightness = float(sum(pixels) / len(pixels))
-
-        return average_brightness
-
-    def choose_text_color_by_brightness(
-        self, brightness: float, threshold: int = BRIGHTNESS_THRESHOLD
-    ) -> tuple[int, int, int]:
-        # 輝度が閾値より大きい（明るい）場合は黒、それ以外は白
-        return (0, 0, 0) if brightness > threshold else (255, 255, 255)
-
-    def gemerate_lgtm_image(self, image_data: bytes) -> io.BytesIO:
-        with Image.open(io.BytesIO(image_data)) as img:
-            width, height = img.size
-
-            # アスペクト比を維持しながら幅または高さを調整する
-            if width > height:
-                new_width = 400
-                new_height = int((height / width) * new_width)
-            else:
-                new_height = 400
-                new_width = int((width / height) * new_height)
-
-            img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-
-            draw = ImageDraw.Draw(img)
-            font_path = self.font_path
-            font_lgtm = ImageFont.truetype(font_path, 60)
-            font_meow = ImageFont.truetype(font_path, 30)
-
-            # テキストのサイズを計測
-            lgtm_text = "LGTM"
-            meow_text = "eow"
-
-            bbox_lgtm = draw.textbbox((0, 0), lgtm_text, font=font_lgtm)
-            bbox_meow = draw.textbbox((0, 0), meow_text, font=font_meow)
-
-            text_width_lgtm = bbox_lgtm[2] - bbox_lgtm[0]
-            text_height_lgtm = bbox_lgtm[3] - bbox_lgtm[1]
-            text_width_meow = bbox_meow[2] - bbox_meow[0]
-            text_height_meow = bbox_meow[3] - bbox_meow[1]
-
-            _, descender = font_lgtm.getmetrics()
-
-            # 画像の中央にテキストを配置するための座標計算
-            total_width = text_width_lgtm + text_width_meow
-            x_lgtm = (new_width / 2) - (total_width / 2)
-            x_meow = x_lgtm + text_width_lgtm
-
-            y_lgtm = (new_height / 2) - (text_height_lgtm / 2) - descender
-            y_meow = y_lgtm + text_height_lgtm - text_height_meow
-
-            # テキスト描画範囲のbboxを作成
-            left = int(x_lgtm)
-            top = int(y_lgtm)
-            right = int(x_lgtm + total_width)
-            bottom = int(y_lgtm + text_height_lgtm)
-            text_bbox = (left, top, right, bottom)
-
-            # 背景の輝度を算出
-            brightness = self.get_average_brightness(img, text_bbox)
-            text_color = self.choose_text_color_by_brightness(brightness)
-
-            # テキストを描画
-            draw.text((x_lgtm, y_lgtm), lgtm_text, font=font_lgtm, fill=text_color)
-            draw.text((x_meow, y_meow), meow_text, font=font_meow, fill=text_color)
-
-            buffer = io.BytesIO()
-            img.save(buffer, format="WEBP")
-            buffer.seek(0)
-            return buffer
 
     def execute(self) -> tuple[str, str]:
         self.logger.info("LGTM画像の作成を開始")
         try:
-            cat_image = self.s3repository.fetch_image(self.bucket_name, self.object_key)
+            original_image = self.s3repository.fetch_image(
+                self.bucket_name, self.object_key
+            )
 
-            processed_image = self.gemerate_lgtm_image(cat_image)
+            font_path = os.path.join(
+                os.environ["LAMBDA_TASK_ROOT"], "fonts", "MPLUSRounded1c-Medium.ttf"
+            )
+            generator = LgtmImageGenerator(
+                cat_detector=self.cat_detection_repository,
+                font_path=font_path,
+                logger=self.logger,
+            )
+            generated_image = generator.generate(
+                original_image, self.bucket_name, self.object_key
+            )
 
             upload_bucket_name = os.getenv("GENERATE_LGTM_IMAGE_UPLOAD_BUCKET")
             if upload_bucket_name is None:
@@ -137,9 +58,8 @@ class GenerateLgtmImageUsecase:
                 )
 
             upload_object_key = build_upload_object_key(self.object_key)
-
             self.s3repository.upload_image(
-                upload_bucket_name, upload_object_key, processed_image
+                upload_bucket_name, upload_object_key, generated_image
             )
 
             self.logger.info("LGTM画像の作成に成功")

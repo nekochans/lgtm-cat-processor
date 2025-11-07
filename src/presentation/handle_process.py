@@ -1,13 +1,12 @@
 from enum import Enum
+
 from domain.lgtm_image_repository_interface import LgtmImageRepositoryInterface
 from domain.object_storage_repository_interface import ObjectStorageRepositoryInterface
 from infrastructure.db import create_db
 from infrastructure.lgtm_image_repository import create_lgtm_image_repository
+from infrastructure.rekognition_repository import create_rekognition_repository
+from infrastructure.s3_repository import create_s3_client, create_s3_repository
 from log.logging import AppLogger, setup_logger
-from infrastructure.s3_repository import (
-    create_s3_client,
-    create_s3_repository,
-)
 from usecase.generate_lgtmI_image_usecase import GenerateLgtmImageUsecase
 from usecase.judge_image_usecase import JudgeImageUsecase
 from usecase.store_to_db_usecase import StoreToDbUsecase
@@ -38,8 +37,13 @@ def handle_process(
         judge_image_usecase.execute()
         return bucket_name, object_key
     elif process == ProcessType.GENERATE_LGTM_IMAGE.value:
+        cat_detection_repository = create_rekognition_repository(logger)
         generate_lgtm_image_usecase = GenerateLgtmImageUsecase(
-            s3_repository, bucket_name, object_key, logger
+            s3_repository,
+            cat_detection_repository,
+            bucket_name,
+            object_key,
+            logger,
         )
 
         return generate_lgtm_image_usecase.execute()

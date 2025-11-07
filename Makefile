@@ -10,4 +10,4 @@ format:
 	uv run ruff format
 
 typecheck:
-	uv run mypy src/ --strict
+	uv run mypy src/ tests/ --strict

@@ -8,7 +8,7 @@ authors = [
 dependencies = [
     "boto3>=1.35.10",
     "pillow>=10.4.0",
-    "boto3-stubs[s3]>=1.35.12",
+    "boto3-stubs[s3,rekognition]>=1.35.12",
     "sqlalchemy>=2.0.34",
     "mysql-connector-python>=9.0.0",
 ]
@@ -24,6 +24,7 @@ dev = [
     "ruff>=0.6.3",
     "mypy>=1.11.2",
     "types-pymysql>=1.1.0.20240524",
+    "pytest>=8.3.5",
 ]
 
 [tool.hatch.metadata]
@@ -31,3 +32,6 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/lgtm_cat_processor"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
