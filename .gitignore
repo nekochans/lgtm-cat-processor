@@ -11,3 +11,6 @@ wheels/
 
 # IDEA
 .idea
+
+# logs
+logs/
