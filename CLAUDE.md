@@ -64,6 +64,9 @@ make format            # コードフォーマット
 
 # 型チェック
 make typecheck         # mypy --strictで実行
+
+# テスト
+make test              # pytestで実行
 ```
 
 ## デプロイ
@@ -81,12 +84,11 @@ make typecheck         # mypy --strictで実行
 
 ## テストとCI
 
-CIワークフロー（`.github/workflows/ci.yml`）は3つのジョブを実行：
+CIワークフロー（`.github/workflows/ci.yml`）は4つのジョブを実行：
 1. `uv run ruff check` - リント
 2. `uv run ruff format --check` - フォーマット検証
-3. `uv run mypy src/ --strict` - 型チェック
-
-**現在、ユニットテストはコードベースに存在しません。**
+3. `uv run mypy src/ tests/ --strict` - 型チェック
+4. `uv run pytest -vv -s src/ tests/` - ユニットテスト
 
 ## 依存関係
 
