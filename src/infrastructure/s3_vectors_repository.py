@@ -49,18 +49,18 @@ class S3VectorsRepository(VectorIndexStorageRepositoryInterface):
         self,
         source_bucket: str,
         source_key: str,
-        database_Id: int,
+        database_id: int,
         embedding: list[float],
     ) -> None:
         try:
             self.logger.info(
-                f"ベクトルインデックス保存開始: source={source_bucket}/{source_key}, database_id={database_Id}"
+                f"ベクトルインデックス保存開始: source={source_bucket}/{source_key}, database_id={database_id}"
             )
 
             # ベクトルデータを作成
             vector_values: VectorDataTypeDef = {"float32": embedding}
             vector_data: PutInputVectorTypeDef = {
-                "key": str(database_Id),
+                "key": str(database_id),
                 "data": vector_values,
                 "metadata": {
                     "source_key": source_key,
@@ -76,12 +76,12 @@ class S3VectorsRepository(VectorIndexStorageRepositoryInterface):
             )
 
             self.logger.info(
-                f"ベクトルインデックス保存完了: bucket={self.vector_index_bucket}, index={self.vector_index_name}, key={database_Id}, database_id={database_Id}"
+                f"ベクトルインデックス保存完了: bucket={self.vector_index_bucket}, index={self.vector_index_name}, key={database_id}, database_id={database_id}"
             )
 
         except Exception as e:
             self.logger.error(
-                f"ベクトルインデックス保存エラー: source={source_bucket}/{source_key}, database_id={database_Id}, error={e}",
+                f"ベクトルインデックス保存エラー: source={source_bucket}/{source_key}, database_id={database_id}, error={e}",
                 exc_info=True,
             )
             raise

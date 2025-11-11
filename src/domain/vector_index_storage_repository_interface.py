@@ -8,7 +8,7 @@ class VectorIndexStorageRepositoryInterface(Protocol):
         self,
         source_bucket: str,
         source_key: str,
-        database_Id: int,
+        database_id: int,
         embedding: list[float],
     ) -> None:
         """
@@ -17,11 +17,11 @@ class VectorIndexStorageRepositoryInterface(Protocol):
         Args:
             source_bucket: 元画像が保存されているS3バケット名（ログ用）
             source_key: 元画像のS3オブジェクトキー（metadataに保存）
-            database_Id: データベースの主キー（ベクトルのkeyとして使用）
+            database_id: データベースの主キー（ベクトルのkeyとして使用）
             embedding: 画像の埋め込みベクトル
 
         Note:
-            - database_Idがベクトルストレージのkeyとして使用されます
+            - database_idがベクトルストレージのkeyとして使用されます
             - source_keyはmetadataとしてデバッグ用に保存されます
             - source_bucketはログ出力にのみ使用されます（保存されません）
         """
