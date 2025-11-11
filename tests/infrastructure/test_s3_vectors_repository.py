@@ -225,4 +225,3 @@ class TestS3VectorsRepository:
                 s3_client=mock_s3_client,
                 logger=mock_logger,
             )
-

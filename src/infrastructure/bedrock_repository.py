@@ -33,7 +33,9 @@ class BedrockRepository(ImageEmbeddingRepositoryInterface):
         self.logger = logger
         self.model_id = os.environ.get("BEDROCK_MODEL_ID", "cohere.embed-v4:0")
 
-    def generate_embedding(self, image_base64: str, image_mime_type: str = "image/webp") -> list[float]:
+    def generate_embedding(
+        self, image_base64: str, image_mime_type: str = "image/webp"
+    ) -> list[float]:
         try:
             self.logger.info("画像埋め込みベクトル生成開始")
 
