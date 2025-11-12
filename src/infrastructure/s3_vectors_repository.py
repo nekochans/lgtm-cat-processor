@@ -1,5 +1,6 @@
 # 絶対厳守：編集前に必ずAI実装ルールを読む
 
+import math
 import os
 from array import array
 
@@ -63,11 +64,11 @@ class S3VectorsRepository(VectorIndexStorageRepositoryInterface):
 
             # NaN/Infinity のバリデーション
             for value in float32_embedding:
-                if value != value:  # NaN check
+                if math.isnan(value):
                     raise ValueError(
                         f"埋め込みベクトルに NaN が含まれています: database_id={database_id}"
                     )
-                if abs(value) == float("inf"):  # Infinity check
+                if math.isinf(value):
                     raise ValueError(
                         f"埋め込みベクトルに Infinity が含まれています: database_id={database_id}"
                     )
