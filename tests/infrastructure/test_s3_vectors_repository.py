@@ -1,5 +1,6 @@
 # 絶対厳守：編集前に必ずAI実装ルールを読む
 
+from array import array
 from unittest.mock import Mock
 
 import pytest
@@ -68,8 +69,9 @@ class TestS3VectorsRepository:
         # ベクトルキーが database_id であること
         assert vector_data["key"] == str(database_id)
 
-        # ベクトルデータの確認
-        assert vector_data["data"]["float32"] == embedding
+        # ベクトルデータの確認（float32変換を考慮）
+        expected_float32 = list(array("f", embedding))
+        assert vector_data["data"]["float32"] == expected_float32
 
         # metadataに source_key が含まれていること
         assert vector_data["metadata"]["source_key"] == source_key
@@ -225,3 +227,70 @@ class TestS3VectorsRepository:
                 s3_client=mock_s3_client,
                 logger=mock_logger,
             )
+
+    def test_save_vector_index_with_nan_values(
+        self,
+        repository: S3VectorsRepository,
+        mock_s3_client: Mock,
+    ) -> None:
+        """NaNを含む埋め込みベクトルでValueErrorが発生すること"""
+        # Arrange
+        source_bucket = "source-bucket"
+        source_key = "images/cat.jpg"
+        embedding = [0.1, float("nan"), 0.3]
+        database_id = 1
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="埋め込みベクトルに NaN が含まれています"):
+            repository.save_vector_index(
+                source_bucket, source_key, database_id, embedding
+            )
+
+        # put_vectorsは呼ばれないはず
+        mock_s3_client.put_vectors.assert_not_called()
+
+    def test_save_vector_index_with_infinity_values(
+        self,
+        repository: S3VectorsRepository,
+        mock_s3_client: Mock,
+    ) -> None:
+        """Infinityを含む埋め込みベクトルでValueErrorが発生すること"""
+        # Arrange
+        source_bucket = "source-bucket"
+        source_key = "images/cat.jpg"
+        embedding = [0.1, float("inf"), 0.3]
+        database_id = 1
+
+        # Act & Assert
+        with pytest.raises(
+            ValueError, match="埋め込みベクトルに Infinity が含まれています"
+        ):
+            repository.save_vector_index(
+                source_bucket, source_key, database_id, embedding
+            )
+
+        # put_vectorsは呼ばれないはず
+        mock_s3_client.put_vectors.assert_not_called()
+
+    def test_save_vector_index_with_negative_infinity_values(
+        self,
+        repository: S3VectorsRepository,
+        mock_s3_client: Mock,
+    ) -> None:
+        """-Infinityを含む埋め込みベクトルでValueErrorが発生すること"""
+        # Arrange
+        source_bucket = "source-bucket"
+        source_key = "images/cat.jpg"
+        embedding = [0.1, float("-inf"), 0.3]
+        database_id = 1
+
+        # Act & Assert
+        with pytest.raises(
+            ValueError, match="埋め込みベクトルに Infinity が含まれています"
+        ):
+            repository.save_vector_index(
+                source_bucket, source_key, database_id, embedding
+            )
+
+        # put_vectorsは呼ばれないはず
+        mock_s3_client.put_vectors.assert_not_called()

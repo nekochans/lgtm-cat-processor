@@ -1,6 +1,7 @@
 # 絶対厳守：編集前に必ずAI実装ルールを読む
 
 import os
+from array import array
 
 import boto3
 from mypy_boto3_s3vectors import S3VectorsClient
@@ -57,8 +58,22 @@ class S3VectorsRepository(VectorIndexStorageRepositoryInterface):
                 f"ベクトルインデックス保存開始: source={source_bucket}/{source_key}, database_id={database_id}"
             )
 
+            # float64 → float32 変換（AWS S3 Vectors の仕様に準拠）
+            float32_embedding = array("f", embedding)
+
+            # NaN/Infinity のバリデーション
+            for value in float32_embedding:
+                if value != value:  # NaN check
+                    raise ValueError(
+                        f"埋め込みベクトルに NaN が含まれています: database_id={database_id}"
+                    )
+                if abs(value) == float("inf"):  # Infinity check
+                    raise ValueError(
+                        f"埋め込みベクトルに Infinity が含まれています: database_id={database_id}"
+                    )
+
             # ベクトルデータを作成
-            vector_values: VectorDataTypeDef = {"float32": embedding}
+            vector_values: VectorDataTypeDef = {"float32": list(float32_embedding)}
             vector_data: PutInputVectorTypeDef = {
                 "key": str(database_id),
                 "data": vector_values,
