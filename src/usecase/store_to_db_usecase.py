@@ -22,14 +22,17 @@ class StoreToDbUsecase:
         self.logger = logger
         self.lgtm_image_repository = lgtm_image_repository
 
-    def execute(self) -> None:
+    def execute(self) -> int:
         self.logger.info("LGTM画像情報のDBへの保存を開始")
         try:
             path = os.path.dirname(self.object_key)
             filenameWithoutExt = extract_filename_without_ext(self.object_key)
 
-            self.lgtm_image_repository.save_lgtm_cat(filenameWithoutExt, path)
-            self.logger.info("LGTM画像情報のDBへの保存が成功")
+            image_id = self.lgtm_image_repository.save_lgtm_cat(
+                filenameWithoutExt, path
+            )
+            self.logger.info(f"LGTM画像情報のDBへの保存が成功 (ID: {image_id})")
+            return image_id
         except Exception as e:
             self.logger.error(e, exc_info=True)
             raise

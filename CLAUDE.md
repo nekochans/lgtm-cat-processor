@@ -93,7 +93,7 @@ CIワークフロー（`.github/workflows/ci.yml`）は4つのジョブを実行
 ## 依存関係
 
 主要な依存パッケージ：
-- `boto3` + `boto3-stubs[s3]` - AWS S3操作
+- `boto3` + `boto3-stubs[s3,rekognition,s3vectors,bedrock-runtime]` - AWS S3、Rekognition、S3 Vectors、Bedrock操作
 - `pillow` - 画像処理
 - `sqlalchemy` + `mysql-connector-python` - データベース操作
 
@@ -101,6 +101,11 @@ CIワークフロー（`.github/workflows/ci.yml`）は4つのジョブを実行
 
 - `LAMBDA_TASK_ROOT` - フォントとリソースのベースパス（Lambda実行環境で設定）
 - `GENERATE_LGTM_IMAGE_UPLOAD_BUCKET` - 処理済み画像のアップロード先S3バケット
+- `VECTOR_INDEX_BUCKET` - ベクトルインデックス保存用のS3 Vectorsバケット名
+- `VECTOR_INDEX_NAME` - S3 Vectorsのインデックス名
+- `BEDROCK_REGION` - AWS Bedrockのリージョン（デフォルト: us-east-1）
+- `BEDROCK_MODEL_ID` - Bedrockで使用する画像埋め込みモデルID（デフォルト: cohere.embed-v4:0）
+- `S3_VECTORS_REGION` - AWS S3 Vectorsのリージョン（デフォルト: us-east-1）
 
 ## GitとGitHubワークフロールール
 

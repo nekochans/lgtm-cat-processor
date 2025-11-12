@@ -1,12 +1,27 @@
 from enum import Enum
 
+from domain.image_embedding_repository_interface import (
+    ImageEmbeddingRepositoryInterface,
+)
 from domain.lgtm_image_repository_interface import LgtmImageRepositoryInterface
 from domain.object_storage_repository_interface import ObjectStorageRepositoryInterface
+from domain.vector_index_storage_repository_interface import (
+    VectorIndexStorageRepositoryInterface,
+)
+from infrastructure.bedrock_repository import (
+    create_bedrock_client,
+    create_bedrock_repository,
+)
 from infrastructure.db import create_db
 from infrastructure.lgtm_image_repository import create_lgtm_image_repository
 from infrastructure.rekognition_repository import create_rekognition_repository
 from infrastructure.s3_repository import create_s3_client, create_s3_repository
+from infrastructure.s3_vectors_repository import (
+    create_s3_client_for_vector_storage,
+    create_s3_vectors_repository,
+)
 from log.logging import AppLogger, setup_logger
+from usecase.create_image_index_usecase import CreateImageIndexUsecase
 from usecase.generate_lgtmI_image_usecase import GenerateLgtmImageUsecase
 from usecase.judge_image_usecase import JudgeImageUsecase
 from usecase.store_to_db_usecase import StoreToDbUsecase
@@ -16,11 +31,16 @@ class ProcessType(Enum):
     JUDGE_IMAGE = "judgeImage"
     GENERATE_LGTM_IMAGE = "generateLgtmImage"
     STORE_TO_DB = "storeToDb"
+    CREATE_IMAGE_INDEX = "createImageIndex"
 
 
 def handle_process(
-    request_id: str, process: str, bucket_name: str, object_key: str
-) -> tuple[str, str]:
+    request_id: str,
+    process: str,
+    bucket_name: str,
+    object_key: str,
+    database_id: int | None,
+) -> tuple[str, str, int | None]:
     logger: AppLogger = setup_logger(request_id, process, bucket_name, object_key)
     s3_client = create_s3_client()
     s3_repository: ObjectStorageRepositoryInterface = create_s3_repository(
@@ -35,7 +55,7 @@ def handle_process(
         judge_image_usecase = JudgeImageUsecase(bucket_name, object_key)
 
         judge_image_usecase.execute()
-        return bucket_name, object_key
+        return bucket_name, object_key, None
     elif process == ProcessType.GENERATE_LGTM_IMAGE.value:
         cat_detection_repository = create_rekognition_repository(logger)
         generate_lgtm_image_usecase = GenerateLgtmImageUsecase(
@@ -46,7 +66,8 @@ def handle_process(
             logger,
         )
 
-        return generate_lgtm_image_usecase.execute()
+        result_bucket, result_key = generate_lgtm_image_usecase.execute()
+        return result_bucket, result_key, None
     elif process == ProcessType.STORE_TO_DB.value:
         try:
             sessionLocal = create_db()
@@ -62,8 +83,37 @@ def handle_process(
             lgtm_image_repository, bucket_name, object_key, logger
         )
 
-        store_to_db_usecase.execute()
-        return bucket_name, object_key
+        image_id = store_to_db_usecase.execute()
+        return bucket_name, object_key, image_id
+    elif process == ProcessType.CREATE_IMAGE_INDEX.value:
+        if database_id is None:
+            logger.error("CREATE_IMAGE_INDEXプロセスにはdatabaseIdが必須です")
+            raise ValueError("CREATE_IMAGE_INDEXプロセスにはdatabaseIdが必須です")
+
+        # 画像埋め込みベクトル生成リポジトリ（Bedrock）
+        bedrock_client = create_bedrock_client()
+        embedding_repository: ImageEmbeddingRepositoryInterface = (
+            create_bedrock_repository(bedrock_client, logger)
+        )
+
+        # ベクトルインデックス保存リポジトリ（S3）
+        s3_vectors_client = create_s3_client_for_vector_storage()
+        vector_storage_repository: VectorIndexStorageRepositoryInterface = (
+            create_s3_vectors_repository(s3_vectors_client, logger)
+        )
+
+        create_image_index_usecase = CreateImageIndexUsecase(
+            s3_repository,
+            embedding_repository,
+            vector_storage_repository,
+            bucket_name,
+            object_key,
+            database_id,
+            logger,
+        )
+
+        result_bucket, result_key = create_image_index_usecase.execute()
+        return result_bucket, result_key, None
     else:
         logger.error(
             f"ProcessTypeで定義されたprocessに必要な処理が実行されていません: {process}"
