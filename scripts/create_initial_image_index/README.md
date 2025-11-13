@@ -82,7 +82,6 @@ uv run python -m scripts.create_initial_image_index.create_initial_image_index \
 | `--lambda-function` | ✓ | - | Lambda関数名 |
 | `--profile` | | - | AWSプロファイル名（指定しない場合はデフォルトプロファイルを使用） |
 | `--dry-run` | | False | ドライラン実行 |
-| `--log-dir` | | logs | ログファイルを保存するディレクトリ |
 
 ## 実行例
 
@@ -133,16 +132,6 @@ logs/create_initial_index_20251113_120000.log
 ```
 
 タイムスタンプ付きで保存されるため、複数回実行しても履歴が残ります。
-
-### ログディレクトリの変更
-
-```bash
-# カスタムディレクトリを指定
-uv run python -m scripts.create_initial_image_index.create_initial_image_index \
-  --bucket stg-lgtmeow-images \
-  --lambda-function stg-lgtm-image-processor \
-  --log-dir /path/to/custom/logs
-```
 
 ## 出力例
 
