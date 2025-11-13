@@ -23,17 +23,17 @@ uv sync
 
 ```bash
 # ステージング環境で全画像を再生成
-uv run python scripts/regenerate_lgtm_images.py \
+uv run python scripts/regenerate_lgtm_images/regenerate_lgtm_images.py \
   --bucket stg-lgtmeow-cat-images \
   --lambda-function stg-lgtm-image-processor
 
 # 本番環境で全画像を再生成
-uv run python scripts/regenerate_lgtm_images.py \
+uv run python scripts/regenerate_lgtm_images/regenerate_lgtm_images.py \
   --bucket prod-lgtmeow-cat-images \
   --lambda-function prod-lgtm-image-processor
 
 # AWSプロファイルを指定する場合
-uv run python scripts/regenerate_lgtm_images.py \
+uv run python scripts/regenerate_lgtm_images/regenerate_lgtm_images.py \
   --bucket stg-lgtmeow-cat-images \
   --lambda-function stg-lgtm-image-processor \
   --profile lgtm-cat
@@ -43,14 +43,14 @@ uv run python scripts/regenerate_lgtm_images.py \
 
 ```bash
 # 2025年11月7日の画像のみを再生成
-uv run python scripts/regenerate_lgtm_images.py \
+uv run python scripts/regenerate_lgtm_images/regenerate_lgtm_images.py \
   --bucket stg-lgtmeow-cat-images \
   --lambda-function stg-lgtm-image-processor \
   --start-date 2025/11/07 \
   --end-date 2025/11/07
 
 # 2025年11月の画像のみを再生成（プレフィックス指定）
-uv run python scripts/regenerate_lgtm_images.py \
+uv run python scripts/regenerate_lgtm_images/regenerate_lgtm_images.py \
   --bucket stg-lgtmeow-cat-images \
   --lambda-function stg-lgtm-image-processor \
   --prefix 2025/11/
@@ -61,7 +61,7 @@ uv run python scripts/regenerate_lgtm_images.py \
 実際のLambda実行を行わず、対象画像の確認のみを行います。
 
 ```bash
-uv run python scripts/regenerate_lgtm_images.py \
+uv run python scripts/regenerate_lgtm_images/regenerate_lgtm_images.py \
   --bucket stg-lgtmeow-cat-images \
   --lambda-function stg-lgtm-image-processor \
   --dry-run
@@ -85,7 +85,7 @@ uv run python scripts/regenerate_lgtm_images.py \
 ### ステップ1: ドライランで対象確認
 
 ```bash
-uv run python scripts/regenerate_lgtm_images.py \
+uv run python scripts/regenerate_lgtm_images/regenerate_lgtm_images.py \
   --bucket stg-lgtmeow-cat-images \
   --lambda-function stg-lgtm-image-processor \
   --start-date 2025/11/07 \
@@ -96,7 +96,7 @@ uv run python scripts/regenerate_lgtm_images.py \
 ### ステップ2: 小規模テスト実行
 
 ```bash
-uv run python scripts/regenerate_lgtm_images.py \
+uv run python scripts/regenerate_lgtm_images/regenerate_lgtm_images.py \
   --bucket stg-lgtmeow-cat-images \
   --lambda-function stg-lgtm-image-processor \
   --start-date 2025/11/07 \
@@ -107,12 +107,12 @@ uv run python scripts/regenerate_lgtm_images.py \
 
 ```bash
 # まずステージング環境で全画像を再生成
-uv run python scripts/regenerate_lgtm_images.py \
+uv run python scripts/regenerate_lgtm_images/regenerate_lgtm_images.py \
   --bucket stg-lgtmeow-cat-images \
   --lambda-function stg-lgtm-image-processor
 
 # 問題なければ本番環境で実行
-uv run python scripts/regenerate_lgtm_images.py \
+uv run python scripts/regenerate_lgtm_images/regenerate_lgtm_images.py \
   --bucket prod-lgtmeow-cat-images \
   --lambda-function prod-lgtm-image-processor
 ```
@@ -136,7 +136,7 @@ logs/regenerate_20251107_120000.log
 
 ```bash
 # カスタムディレクトリを指定
-uv run python scripts/regenerate_lgtm_images.py \
+uv run python scripts/regenerate_lgtm_images/regenerate_lgtm_images.py \
   --bucket stg-lgtmeow-cat-images \
   --lambda-function stg-lgtm-image-processor \
   --log-dir /path/to/custom/logs
