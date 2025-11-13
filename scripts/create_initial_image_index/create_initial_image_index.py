@@ -333,17 +333,10 @@ def main() -> None:
         help="ドライラン実行（実際のLambda実行は行わない）",
     )
 
-    parser.add_argument(
-        "--log-dir",
-        type=str,
-        default="logs",
-        help="ログファイルを保存するディレクトリ（デフォルト: logs）",
-    )
-
     args = parser.parse_args()
 
     # ロギング設定
-    log_file = setup_logging(args.log_dir)
+    log_file = setup_logging()
     logger.info("=" * 60)
     logger.info("LGTM画像初期インデックス作成スクリプト開始")
     logger.info("=" * 60)
