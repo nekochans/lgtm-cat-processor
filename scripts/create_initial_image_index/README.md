@@ -127,7 +127,7 @@ uv run python -m scripts.create_initial_image_index.create_initial_image_index \
 
 ### ログファイル名の形式
 
-```
+```bash
 logs/create_initial_index_20251113_120000.log
 ```
 
@@ -137,7 +137,7 @@ logs/create_initial_index_20251113_120000.log
 
 ### コンソール出力（ログファイルにも同じ内容が保存される）
 
-```
+```bash
 2025-11-13 12:00:00 - INFO - ============================================================
 2025-11-13 12:00:00 - INFO - LGTM画像初期インデックス作成スクリプト開始
 2025-11-13 12:00:00 - INFO - ============================================================
@@ -197,7 +197,7 @@ Lambda関数が正常に実行されたかどうかは、以下の条件で判�
 
 Lambda実行が失敗した場合、以下の情報がログに出力されます：
 
-```
+```bash
 2025-11-13 12:57:15 - ERROR - ✗ 失敗: ID=123, key=2025/11/04/11/xxx.webp - FunctionError: Unhandled
 2025-11-13 12:57:15 - ERROR -   レスポンス: {"errorType":"RuntimeError","errorMessage":"Failed to process image","stackTrace":[...]}
 ```
@@ -218,7 +218,7 @@ Lambda実行が失敗した場合、以下の情報がログに出力されま�
 
 ### 環境変数エラー
 
-```
+```bash
 環境変数エラー: 環境変数 DB_HOSTNAME が設定されていません
 ```
 
