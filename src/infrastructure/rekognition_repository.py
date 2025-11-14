@@ -41,8 +41,9 @@ class RekognitionRepository(CatDetectionRepositoryInterface):
             for label in response.get("Labels", []):
                 # "Cat" ラベルを探す
                 if label["Name"] == "Cat":
+                    label_confidence = label.get("Confidence", 0.0)
                     self.logger.info(
-                        f"猫検出: 信頼度={label['Confidence']:.2f}%, "
+                        f"猫検出: 信頼度={label_confidence:.2f}%, "
                         f"インスタンス数={len(label.get('Instances', []))}"
                     )
 
