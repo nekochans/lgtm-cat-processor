@@ -7,16 +7,24 @@ from domain.cat_detection_repository_interface import CatDetectionRepositoryInte
 from log.logging import AppLogger
 
 
-def create_rekognition_repository(logger: AppLogger) -> CatDetectionRepositoryInterface:
-    return RekognitionRepository(logger)
+def create_rekognition_client() -> RekognitionClient:
+    return boto3.client("rekognition")
+
+
+def create_rekognition_repository(
+    rekognition_client: RekognitionClient, logger: AppLogger
+) -> CatDetectionRepositoryInterface:
+    return RekognitionRepository(rekognition_client, logger)
 
 
 class RekognitionRepository(CatDetectionRepositoryInterface):
     # 信頼度の閾値（80%以上を採用）
     CONFIDENCE_THRESHOLD = 80.0
 
-    def __init__(self, logger: AppLogger) -> None:
-        self.rekognition_client: RekognitionClient = boto3.client("rekognition")
+    def __init__(
+        self, rekognition_client: RekognitionClient, logger: AppLogger
+    ) -> None:
+        self.rekognition_client = rekognition_client
         self.logger = logger
 
     def detect_cats(self, bucket_name: str, object_key: str) -> list[CatBoundingBox]:
