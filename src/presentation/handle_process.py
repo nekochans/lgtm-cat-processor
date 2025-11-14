@@ -22,7 +22,7 @@ from infrastructure.s3_vectors_repository import (
 )
 from log.logging import AppLogger, setup_logger
 from usecase.create_image_index_usecase import CreateImageIndexUsecase
-from usecase.generate_lgtmI_image_usecase import GenerateLgtmImageUsecase
+from usecase.generate_lgtm_image_usecase import GenerateLgtmImageUsecase
 from usecase.judge_image_usecase import JudgeImageUsecase
 from usecase.store_to_db_usecase import StoreToDbUsecase
 
