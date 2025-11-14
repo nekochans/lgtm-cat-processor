@@ -37,7 +37,6 @@ class TestRekognitionRepository:
     def test_detect_cats_success_single_cat(
         self,
         repository: RekognitionRepository,
-        mock_logger: Mock,
         mock_rekognition_client: Mock,
     ) -> None:
         """猫を1匹検出できること"""
@@ -88,7 +87,6 @@ class TestRekognitionRepository:
     def test_detect_cats_success_multiple_cats(
         self,
         repository: RekognitionRepository,
-        mock_logger: Mock,
         mock_rekognition_client: Mock,
     ) -> None:
         """複数の猫を検出できること"""
@@ -340,11 +338,12 @@ class TestRekognitionRepository:
         assert call_args[1]["exc_info"] is True
 
     @pytest.mark.parametrize(
-        "mock_response,description",
+        "mock_response",
         [
-            ({"Labels": []}, "Labelsが空"),
-            ({}, "Labelsキーなし"),
+            ({"Labels": []}),
+            ({}),
         ],
+        ids=["Labelsが空", "Labelsキーなし"],
     )
     def test_detect_cats_empty_responses(
         self,
@@ -352,7 +351,6 @@ class TestRekognitionRepository:
         mock_logger: Mock,
         mock_rekognition_client: Mock,
         mock_response: dict[str, Any],
-        description: str,
     ) -> None:
         """空のレスポンスの場合に空リストを返すこと"""
         # Arrange

@@ -10,7 +10,7 @@ class TestToPixelCoordinates:
     """to_pixel_coordinates関数のテスト"""
 
     @pytest.mark.parametrize(
-        "bbox,image_width,image_height,expected_tuple,test_id",
+        "bbox,image_width,image_height,expected_tuple",
         [
             (
                 # 中間的な値での座標変換が正しく動作すること
@@ -24,7 +24,6 @@ class TestToPixelCoordinates:
                 800,
                 600,
                 (200, 180, 520, 390),
-                "normal_coordinate_conversion",
             ),
             (
                 # 境界値(left=0.0, top=0.0)での座標変換が正しく動作すること
@@ -38,7 +37,6 @@ class TestToPixelCoordinates:
                 400,
                 300,
                 (0, 0, 200, 150),
-                "boundary_values_zero",
             ),
             (
                 # 境界値(right=1.0, bottom=1.0)での座標変換が正しく動作すること
@@ -52,7 +50,6 @@ class TestToPixelCoordinates:
                 1000,
                 800,
                 (500, 400, 1000, 800),
-                "boundary_values_one",
             ),
             (
                 # left/topにはfloor、right/bottomにはceilが適用されること
@@ -66,7 +63,6 @@ class TestToPixelCoordinates:
                 900,
                 600,
                 (299, 266, 390, 327),
-                "rounding_floor_and_ceil",
             ),
             (
                 # 画像サイズが0の場合の挙動確認
@@ -80,8 +76,14 @@ class TestToPixelCoordinates:
                 0,
                 0,
                 (0, 0, 0, 0),
-                "zero_image_size",
             ),
+        ],
+        ids=[
+            "normal_coordinate_conversion",
+            "boundary_values_zero",
+            "boundary_values_one",
+            "rounding_floor_and_ceil",
+            "zero_image_size",
         ],
     )
     def test_to_pixel_coordinates(
@@ -90,7 +92,6 @@ class TestToPixelCoordinates:
         image_width: int,
         image_height: int,
         expected_tuple: tuple[int, int, int, int],
-        test_id: str,
     ) -> None:
         """to_pixel_coordinates関数が様々なケースで正しく動作すること"""
         # Act

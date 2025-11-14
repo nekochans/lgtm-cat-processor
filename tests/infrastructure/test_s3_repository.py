@@ -62,11 +62,12 @@ class TestS3Repository:
         )
 
     @pytest.mark.parametrize(
-        "error_code,error_message,description",
+        "error_code,error_message",
         [
-            ("NoSuchKey", "The specified key does not exist.", "存在しないキー"),
-            ("AccessDenied", "Access Denied", "アクセス権限なし"),
+            ("NoSuchKey", "The specified key does not exist."),
+            ("AccessDenied", "Access Denied"),
         ],
+        ids=["存在しないキー", "アクセス権限なし"],
     )
     def test_fetch_image_client_errors(
         self,
@@ -74,7 +75,6 @@ class TestS3Repository:
         mock_s3_client: Mock,
         error_code: str,
         error_message: str,
-        description: str,
     ) -> None:
         """S3 ClientErrorが適切に発生すること"""
         # Arrange
