@@ -14,7 +14,10 @@ from infrastructure.bedrock_repository import (
 )
 from infrastructure.db import create_db
 from infrastructure.lgtm_image_repository import create_lgtm_image_repository
-from infrastructure.rekognition_repository import create_rekognition_repository
+from infrastructure.rekognition_repository import (
+    create_rekognition_client,
+    create_rekognition_repository,
+)
 from infrastructure.s3_repository import create_s3_client, create_s3_repository
 from infrastructure.s3_vectors_repository import (
     create_s3_client_for_vector_storage,
@@ -22,7 +25,7 @@ from infrastructure.s3_vectors_repository import (
 )
 from log.logging import AppLogger, setup_logger
 from usecase.create_image_index_usecase import CreateImageIndexUsecase
-from usecase.generate_lgtmI_image_usecase import GenerateLgtmImageUsecase
+from usecase.generate_lgtm_image_usecase import GenerateLgtmImageUsecase
 from usecase.judge_image_usecase import JudgeImageUsecase
 from usecase.store_to_db_usecase import StoreToDbUsecase
 
@@ -57,7 +60,10 @@ def handle_process(
         judge_image_usecase.execute()
         return bucket_name, object_key, None
     elif process == ProcessType.GENERATE_LGTM_IMAGE.value:
-        cat_detection_repository = create_rekognition_repository(logger)
+        rekognition_client = create_rekognition_client()
+        cat_detection_repository = create_rekognition_repository(
+            rekognition_client, logger
+        )
         generate_lgtm_image_usecase = GenerateLgtmImageUsecase(
             s3_repository,
             cat_detection_repository,
