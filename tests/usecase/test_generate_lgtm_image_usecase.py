@@ -1,5 +1,6 @@
 # 絶対厳守：編集前に必ずAI実装ルールを読む
 
+import io
 import os
 from unittest.mock import Mock, patch
 
@@ -96,7 +97,7 @@ class TestGenerateLgtmImageUsecase:
         """正常にLGTM画像が生成・アップロードできること"""
         # Arrange
         test_image_bytes = b"test original image"
-        test_generated_image = b"test lgtm image"
+        test_generated_image = io.BytesIO(b"test lgtm image")
 
         mock_s3_repository.fetch_image.return_value = test_image_bytes
 
@@ -210,7 +211,7 @@ class TestGenerateLgtmImageUsecase:
         """S3アップロード失敗時に例外が伝播すること"""
         # Arrange
         test_image_bytes = b"test original image"
-        test_generated_image = b"test lgtm image"
+        test_generated_image = io.BytesIO(b"test lgtm image")
 
         mock_s3_repository.fetch_image.return_value = test_image_bytes
         mock_s3_repository.upload_image.side_effect = Exception("S3 upload error")
@@ -239,7 +240,7 @@ class TestGenerateLgtmImageUsecase:
         """環境変数GENERATE_LGTM_IMAGE_UPLOAD_BUCKETが未設定の場合に例外が発生すること"""
         # Arrange
         test_image_bytes = b"test original image"
-        test_generated_image = b"test lgtm image"
+        test_generated_image = io.BytesIO(b"test lgtm image")
 
         mock_s3_repository.fetch_image.return_value = test_image_bytes
 
