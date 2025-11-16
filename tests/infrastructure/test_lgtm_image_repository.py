@@ -151,6 +151,7 @@ class TestLgtmImageRepository:
         test_id: int,
     ) -> None:
         """様々なパス形式で正常に保存できること"""
+
         # Arrange
         def mock_refresh(obj: object) -> None:
             if isinstance(obj, LgtmImage):
