@@ -129,33 +129,40 @@ class TestLgtmImageRepository:
         mock_session.commit.assert_called_once()
         mock_session.refresh.assert_called_once()
 
+    @pytest.mark.parametrize(
+        "test_filename,test_path,test_id",
+        [
+            ("image1", "path/to/dir", 1),
+            ("image2", "", 2),
+            ("image3", "a/b/c/d", 3),
+        ],
+        ids=[
+            "nested_path",
+            "empty_path",
+            "deep_nested_path",
+        ],
+    )
     def test_save_lgtm_cat_with_various_paths(
         self,
         repository: LgtmImageRepository,
         mock_session: Mock,
+        test_filename: str,
+        test_path: str,
+        test_id: int,
     ) -> None:
         """様々なパス形式で正常に保存できること"""
         # Arrange
-        test_cases = [
-            ("image1", "path/to/dir"),
-            ("image2", ""),
-            ("image3", "a/b/c/d"),
-        ]
+        def mock_refresh(obj: object) -> None:
+            if isinstance(obj, LgtmImage):
+                obj.id = test_id
 
-        for test_filename, test_path in test_cases:
-            test_id = 1
-            mock_session.reset_mock()
+        mock_session.refresh.side_effect = mock_refresh
 
-            def mock_refresh(obj: object) -> None:
-                if isinstance(obj, LgtmImage):
-                    obj.id = test_id
+        # Act
+        result = repository.save_lgtm_cat(test_filename, test_path)
 
-            mock_session.refresh.side_effect = mock_refresh
-
-            # Act
-            result = repository.save_lgtm_cat(test_filename, test_path)
-
-            # Assert
-            assert result == test_id
-            mock_session.add.assert_called_once()
-            mock_session.commit.assert_called_once()
+        # Assert
+        assert result == test_id
+        mock_session.add.assert_called_once()
+        mock_session.commit.assert_called_once()
+        mock_session.refresh.assert_called_once()
