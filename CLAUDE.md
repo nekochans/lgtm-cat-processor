@@ -90,6 +90,8 @@ CIワークフロー（`.github/workflows/ci.yml`）は4つのジョブを実行
 3. `uv run mypy src/ tests/ --strict` - 型チェック
 4. `uv run pytest -vv -s src/ tests/` - ユニットテスト
 
+**テストコード実装のルールについては @tests/CLAUDE.md を参照してください。**
+
 ## 依存関係
 
 主要な依存パッケージ：
