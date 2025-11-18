@@ -117,7 +117,7 @@ class TestLgtmImageRepository:
         # refreshしてもidがNoneのままのケース
         def mock_refresh(obj: object) -> None:
             if isinstance(obj, LgtmImage):
-                obj.id = None
+                obj.id = None  # type: ignore[assignment]
 
         mock_session.refresh.side_effect = mock_refresh
 
@@ -155,7 +155,7 @@ class TestLgtmImageRepository:
         # Arrange
         def mock_refresh(obj: object) -> None:
             if isinstance(obj, LgtmImage):
-                obj.id = test_id
+                obj.id = test_id  # type: ignore[assignment]
 
         mock_session.refresh.side_effect = mock_refresh
 
