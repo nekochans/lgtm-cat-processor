@@ -1,9 +1,11 @@
 # 絶対厳守：編集前に必ずAI実装ルールを読む
 
 from array import array
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
+from botocore.exceptions import ClientError
 from mypy_boto3_s3vectors import S3VectorsClient
 
 from infrastructure.s3_vectors_repository import S3VectorsRepository
@@ -149,6 +151,7 @@ class TestS3VectorsRepository:
         self,
         repository: S3VectorsRepository,
         mock_s3_client: Mock,
+        mock_logger: Mock,
     ) -> None:
         """S3 Vectors APIエラー時に適切に例外が発生すること"""
         # Arrange
@@ -166,6 +169,47 @@ class TestS3VectorsRepository:
             )
 
         mock_s3_client.put_vectors.assert_called_once()
+
+        # ログが正しく記録されたことを検証
+        mock_logger.error.assert_called_once()
+        error_log_call = mock_logger.error.call_args
+        assert "Unexpected error" in error_log_call[0][0]
+        assert error_log_call[1]["exc_info"] is True
+
+    def test_save_vector_index_client_error(
+        self,
+        repository: S3VectorsRepository,
+        mock_s3_client: Mock,
+        mock_logger: Mock,
+    ) -> None:
+        """ClientError発生時に適切にログ記録され例外が再raiseされること"""
+        # Arrange
+        source_bucket = "source-bucket"
+        source_key = "images/cat.jpg"
+        embedding = [0.1, 0.2, 0.3]
+        database_id = 1
+
+        error_response: Any = {
+            "Error": {
+                "Code": "ValidationException",
+                "Message": "Invalid vector format",
+            }
+        }
+        client_error = ClientError(error_response, "put_vectors")
+        mock_s3_client.put_vectors.side_effect = client_error
+
+        # Act & Assert
+        with pytest.raises(ClientError):
+            repository.save_vector_index(
+                source_bucket, source_key, database_id, embedding
+            )
+
+        # ログが正しく記録されたことを検証
+        mock_logger.error.assert_called_once()
+        error_log_call = mock_logger.error.call_args
+        assert "AWS ClientError" in error_log_call[0][0]
+        assert "ValidationException" in error_log_call[0][0]
+        assert error_log_call[1]["exc_info"] is True
 
     def test_save_vector_index_missing_env_vars(
         self,

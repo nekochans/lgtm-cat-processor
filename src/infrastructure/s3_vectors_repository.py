@@ -5,6 +5,7 @@ import os
 from array import array
 
 import boto3
+from botocore.exceptions import ClientError
 from mypy_boto3_s3vectors import S3VectorsClient
 from mypy_boto3_s3vectors.type_defs import PutInputVectorTypeDef, VectorDataTypeDef
 
@@ -95,9 +96,13 @@ class S3VectorsRepository(VectorIndexStorageRepositoryInterface):
                 f"ベクトルインデックス保存完了: bucket={self.vector_index_bucket}, index={self.vector_index_name}, key={database_id}, database_id={database_id}"
             )
 
-        except Exception as e:
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
             self.logger.error(
-                f"ベクトルインデックス保存エラー: source={source_bucket}/{source_key}, database_id={database_id}, error={e}",
+                f"AWS ClientError: {error_code} - {e}",
                 exc_info=True,
             )
+            raise
+        except Exception as e:
+            self.logger.error(f"Unexpected error: {e}", exc_info=True)
             raise

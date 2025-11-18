@@ -2,9 +2,11 @@
 
 import json
 from io import BytesIO
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
+from botocore.exceptions import ClientError
 from mypy_boto3_bedrock_runtime import BedrockRuntimeClient
 
 from infrastructure.bedrock_repository import BedrockRepository
@@ -132,6 +134,7 @@ class TestBedrockRepository:
         self,
         repository: BedrockRepository,
         mock_bedrock_client: Mock,
+        mock_logger: Mock,
     ) -> None:
         """Bedrock APIエラー時に適切に例外が発生すること"""
         # Arrange
@@ -143,6 +146,41 @@ class TestBedrockRepository:
             repository.generate_embedding(test_image_base64)
 
         mock_bedrock_client.invoke_model.assert_called_once()
+
+        # ログが正しく記録されたことを検証
+        mock_logger.error.assert_called_once()
+        error_log_call = mock_logger.error.call_args
+        assert "Unexpected error" in error_log_call[0][0]
+        assert error_log_call[1]["exc_info"] is True
+
+    def test_generate_embedding_client_error(
+        self,
+        repository: BedrockRepository,
+        mock_bedrock_client: Mock,
+        mock_logger: Mock,
+    ) -> None:
+        """ClientError発生時に適切にログ記録され例外が再raiseされること"""
+        # Arrange
+        test_image_base64 = "dGVzdCBpbWFnZSBkYXRh"
+        error_response: Any = {
+            "Error": {
+                "Code": "InvalidParameterException",
+                "Message": "Invalid parameter",
+            }
+        }
+        client_error = ClientError(error_response, "invoke_model")
+        mock_bedrock_client.invoke_model.side_effect = client_error
+
+        # Act & Assert
+        with pytest.raises(ClientError):
+            repository.generate_embedding(test_image_base64)
+
+        # ログが正しく記録されたことを検証
+        mock_logger.error.assert_called_once()
+        error_log_call = mock_logger.error.call_args
+        assert "AWS ClientError" in error_log_call[0][0]
+        assert "InvalidParameterException" in error_log_call[0][0]
+        assert error_log_call[1]["exc_info"] is True
 
     @pytest.mark.parametrize(
         "test_id,response_body,expected_exception,description",

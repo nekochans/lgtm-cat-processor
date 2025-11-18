@@ -1,8 +1,10 @@
+# 絶対厳守：編集前に必ずAI実装ルールを読む
 import json
 import os
 from typing import cast
 
 import boto3
+from botocore.exceptions import ClientError
 from mypy_boto3_bedrock_runtime import BedrockRuntimeClient
 
 from domain.image_embedding_repository_interface import (
@@ -68,9 +70,13 @@ class BedrockRepository(ImageEmbeddingRepositoryInterface):
 
             return cast(list[float], embedding_vector)
 
-        except Exception as e:
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
             self.logger.error(
-                f"画像埋め込みベクトル生成エラー: {e}",
+                f"AWS ClientError: {error_code} - {e}",
                 exc_info=True,
             )
+            raise
+        except Exception as e:
+            self.logger.error(f"Unexpected error: {e}", exc_info=True)
             raise

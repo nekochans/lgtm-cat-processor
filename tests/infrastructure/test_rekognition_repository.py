@@ -308,7 +308,8 @@ class TestRekognitionRepository:
         # エラーログが正しく出力されることを確認
         mock_logger.error.assert_called_once()
         call_args = mock_logger.error.call_args
-        assert "Rekognition API呼び出しエラー:" in call_args[0][0]
+        assert "AWS ClientError" in call_args[0][0]
+        assert "InvalidImageFormatException" in call_args[0][0]
         assert call_args[1]["exc_info"] is True
 
     def test_detect_cats_generic_exception(
@@ -333,8 +334,7 @@ class TestRekognitionRepository:
         # エラーログが正しく出力されることを確認
         mock_logger.error.assert_called_once()
         call_args = mock_logger.error.call_args
-        assert "Rekognition API呼び出しエラー:" in call_args[0][0]
-        assert "Unexpected error" in call_args[0][0]
+        assert "Unexpected error:" in call_args[0][0]
         assert call_args[1]["exc_info"] is True
 
     @pytest.mark.parametrize(
