@@ -1,5 +1,6 @@
 # 絶対厳守：編集前に必ずAI実装ルールを読む
 import boto3
+from botocore.exceptions import ClientError
 from mypy_boto3_rekognition import RekognitionClient
 
 from domain.cat_bounding_box import CatBoundingBox
@@ -76,6 +77,13 @@ class RekognitionRepository(CatDetectionRepositoryInterface):
 
             return cat_boxes
 
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            self.logger.error(
+                f"AWS ClientError: {error_code} - {e}",
+                exc_info=True,
+            )
+            raise
         except Exception as e:
-            self.logger.error(f"Rekognition API呼び出しエラー: {e}", exc_info=True)
+            self.logger.error(f"Unexpected error: {e}", exc_info=True)
             raise

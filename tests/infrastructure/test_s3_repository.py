@@ -73,10 +73,11 @@ class TestS3Repository:
         self,
         repository: S3Repository,
         mock_s3_client: Mock,
+        mock_logger: Mock,
         error_code: str,
         error_message: str,
     ) -> None:
-        """S3 ClientErrorが適切に発生すること"""
+        """S3 ClientErrorが適切に発生しログ記録されること"""
         # Arrange
         bucket_name = "test-bucket"
         object_key = "test-image.jpg"
@@ -93,12 +94,20 @@ class TestS3Repository:
             Bucket=bucket_name, Key=object_key
         )
 
+        # ログが正しく記録されたことを検証
+        mock_logger.error.assert_called_once()
+        error_log_call = mock_logger.error.call_args
+        assert "AWS ClientError" in error_log_call[0][0]
+        assert error_code in error_log_call[0][0]
+        assert error_log_call[1]["exc_info"] is True
+
     def test_fetch_image_generic_error(
         self,
         repository: S3Repository,
         mock_s3_client: Mock,
+        mock_logger: Mock,
     ) -> None:
-        """その他のS3エラーが発生した場合に適切に例外が発生すること"""
+        """その他のS3エラーが発生した場合に適切に例外が発生しログ記録されること"""
         # Arrange
         bucket_name = "test-bucket"
         object_key = "test-image.jpg"
@@ -110,6 +119,12 @@ class TestS3Repository:
             repository.fetch_image(bucket_name, object_key)
 
         mock_s3_client.get_object.assert_called_once()
+
+        # ログが正しく記録されたことを検証
+        mock_logger.error.assert_called_once()
+        error_log_call = mock_logger.error.call_args
+        assert "Unexpected error:" in error_log_call[0][0]
+        assert error_log_call[1]["exc_info"] is True
 
     def test_fetch_image_empty_body(
         self,
@@ -160,8 +175,9 @@ class TestS3Repository:
         self,
         repository: S3Repository,
         mock_s3_client: Mock,
+        mock_logger: Mock,
     ) -> None:
-        """アップロード時にS3エラーが発生した場合に適切に例外が発生すること"""
+        """アップロード時にS3エラーが発生した場合に適切に例外が発生しログ記録されること"""
         # Arrange
         bucket_name = "test-bucket"
         object_key = "test-image.webp"
@@ -179,12 +195,20 @@ class TestS3Repository:
         assert exc_info.value.response["Error"]["Code"] == "InternalError"
         mock_s3_client.put_object.assert_called_once()
 
+        # ログが正しく記録されたことを検証
+        mock_logger.error.assert_called_once()
+        error_log_call = mock_logger.error.call_args
+        assert "AWS ClientError" in error_log_call[0][0]
+        assert "InternalError" in error_log_call[0][0]
+        assert error_log_call[1]["exc_info"] is True
+
     def test_upload_image_generic_error(
         self,
         repository: S3Repository,
         mock_s3_client: Mock,
+        mock_logger: Mock,
     ) -> None:
-        """アップロード時にその他のエラーが発生した場合に適切に例外が発生すること"""
+        """アップロード時にその他のエラーが発生した場合に適切に例外が発生しログ記録されること"""
         # Arrange
         bucket_name = "test-bucket"
         object_key = "test-image.webp"
@@ -197,3 +221,9 @@ class TestS3Repository:
             repository.upload_image(bucket_name, object_key, processed_image)
 
         mock_s3_client.put_object.assert_called_once()
+
+        # ログが正しく記録されたことを検証
+        mock_logger.error.assert_called_once()
+        error_log_call = mock_logger.error.call_args
+        assert "Unexpected error:" in error_log_call[0][0]
+        assert error_log_call[1]["exc_info"] is True
