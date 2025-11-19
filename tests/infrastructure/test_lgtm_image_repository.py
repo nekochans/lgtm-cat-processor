@@ -23,8 +23,9 @@ class TestLgtmImageRepository:
     def mock_session_factory(self, mock_session: Mock) -> Mock:
         """sessionmakerのモック"""
         mock_factory = Mock(spec=sessionmaker)
-        mock_factory.return_value.__enter__ = Mock(return_value=mock_session)
-        mock_factory.return_value.__exit__ = Mock(return_value=None)
+        # session_factory.begin()がコンテキストマネージャーとして動作するようにする
+        mock_factory.begin.return_value.__enter__ = Mock(return_value=mock_session)
+        mock_factory.begin.return_value.__exit__ = Mock(return_value=None)
         return mock_factory
 
     @pytest.fixture
@@ -55,22 +56,13 @@ class TestLgtmImageRepository:
         test_path = "test/path"
         test_id = 123
 
-        # LgtmImageモックの作成
-        mock_lgtm_image = Mock(spec=LgtmImage)
-        mock_lgtm_image.id = test_id
-
-        # session.addが呼ばれた時にモックを保存
-        def mock_add(obj: object) -> None:
-            if isinstance(obj, LgtmImage):
-                # refreshで呼ばれた時に返すためにオブジェクトを保存
-                mock_session._added_object = mock_lgtm_image
-
-        mock_session.add.side_effect = mock_add
-        mock_session.refresh.side_effect = (
+        # モックの設定
+        mock_session.add.side_effect = (
             lambda obj: setattr(obj, "id", test_id)
             if isinstance(obj, LgtmImage)
             else None
         )
+        mock_session.flush.return_value = None
 
         # Act
         result = repository.save_lgtm_cat(test_filename, test_path)
@@ -78,31 +70,29 @@ class TestLgtmImageRepository:
         # Assert
         assert result == test_id
         mock_session.add.assert_called_once()
-        mock_session.commit.assert_called_once()
-        mock_session.refresh.assert_called_once()
+        mock_session.flush.assert_called_once()
 
     def test_save_lgtm_cat_sqlalchemy_error(
         self,
         repository: LgtmImageRepository,
         mock_session: Mock,
     ) -> None:
-        """SQLAlchemyエラー時にrollbackして例外が伝播すること"""
+        """SQLAlchemyエラー時に例外が伝播すること"""
         # Arrange
         test_filename = "test_image"
         test_path = "test/path"
         error_message = "Database connection error"
 
         mock_session.add.return_value = None
-        mock_session.commit.side_effect = SQLAlchemyError(error_message)
+        mock_session.flush.side_effect = SQLAlchemyError(error_message)
 
         # Act & Assert
         with pytest.raises(SQLAlchemyError, match=error_message):
             repository.save_lgtm_cat(test_filename, test_path)
 
-        # rollbackが呼ばれることを確認
+        # 適切なメソッドが呼ばれたことを確認
         mock_session.add.assert_called_once()
-        mock_session.commit.assert_called_once()
-        mock_session.rollback.assert_called_once()
+        mock_session.flush.assert_called_once()
 
     def test_save_lgtm_cat_id_is_none(
         self,
@@ -114,20 +104,17 @@ class TestLgtmImageRepository:
         test_filename = "test_image"
         test_path = "test/path"
 
-        # refreshしてもidがNoneのままのケース
-        def mock_refresh(obj: object) -> None:
-            if isinstance(obj, LgtmImage):
-                obj.id = None  # type: ignore[assignment]
-
-        mock_session.refresh.side_effect = mock_refresh
+        # flushしてもidがNoneのままのケース
+        mock_session.add.return_value = None
+        mock_session.flush.return_value = None
+        # IDが設定されないケースをシミュレート（addのside_effectでIDを設定しない）
 
         # Act & Assert
         with pytest.raises(RuntimeError, match="画像IDの取得に失敗しました"):
             repository.save_lgtm_cat(test_filename, test_path)
 
         mock_session.add.assert_called_once()
-        mock_session.commit.assert_called_once()
-        mock_session.refresh.assert_called_once()
+        mock_session.flush.assert_called_once()
 
     @pytest.mark.parametrize(
         "test_filename,test_path,test_id",
@@ -153,11 +140,12 @@ class TestLgtmImageRepository:
         """様々なパス形式で正常に保存できること"""
 
         # Arrange
-        def mock_refresh(obj: object) -> None:
-            if isinstance(obj, LgtmImage):
-                obj.id = test_id  # type: ignore[assignment]
-
-        mock_session.refresh.side_effect = mock_refresh
+        mock_session.add.side_effect = (
+            lambda obj: setattr(obj, "id", test_id)
+            if isinstance(obj, LgtmImage)
+            else None
+        )
+        mock_session.flush.return_value = None
 
         # Act
         result = repository.save_lgtm_cat(test_filename, test_path)
@@ -165,5 +153,4 @@ class TestLgtmImageRepository:
         # Assert
         assert result == test_id
         mock_session.add.assert_called_once()
-        mock_session.commit.assert_called_once()
-        mock_session.refresh.assert_called_once()
+        mock_session.flush.assert_called_once()
