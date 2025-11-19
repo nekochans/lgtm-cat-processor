@@ -1,3 +1,4 @@
+# 絶対厳守：編集前に必ずAI実装ルールを読む
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
@@ -18,5 +19,5 @@ def create_db() -> sessionmaker[Session]:
 
     connection_string = f"mysql+mysqlconnector://{user}:{password}@{host}/{database}"
     engine = create_engine(connection_string)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    SessionLocal = sessionmaker(autoflush=False, bind=engine)
     return SessionLocal
