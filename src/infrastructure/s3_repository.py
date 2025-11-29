@@ -69,3 +69,35 @@ class S3Repository(ObjectStorageRepositoryInterface):
         except Exception as e:
             self.logger.error(f"Unexpected error: {e}", exc_info=True)
             raise
+
+    def copy_image(
+        self,
+        source_bucket: str,
+        source_key: str,
+        dest_bucket: str,
+        dest_key: str,
+    ) -> None:
+        try:
+            self.logger.info(
+                f"画像のコピーを開始: {source_bucket}/{source_key} -> "
+                f"{dest_bucket}/{dest_key}"
+            )
+
+            self.s3_client.copy_object(
+                CopySource={"Bucket": source_bucket, "Key": source_key},
+                Bucket=dest_bucket,
+                Key=dest_key,
+            )
+
+            self.logger.info("画像のコピーが完了")
+
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            self.logger.error(
+                f"AWS ClientError: {error_code} - {e}",
+                exc_info=True,
+            )
+            raise
+        except Exception as e:
+            self.logger.error(f"Unexpected error: {e}", exc_info=True)
+            raise

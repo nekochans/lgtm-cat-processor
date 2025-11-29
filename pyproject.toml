@@ -11,6 +11,7 @@ dependencies = [
     "boto3-stubs[s3,rekognition,s3vectors,bedrock-runtime]>=1.40.69",
     "sqlalchemy>=2.0.44",
     "mysql-connector-python>=9.5.0",
+    "requests>=2.32.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -24,6 +25,7 @@ dev = [
     "ruff>=0.14.4",
     "mypy>=1.18.2",
     "types-pymysql>=1.1.0.20250916",
+    "types-requests>=2.32.0",
     "pytest>=9.0.0",
 ]
 

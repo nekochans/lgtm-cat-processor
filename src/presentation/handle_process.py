@@ -12,7 +12,9 @@ from infrastructure.bedrock_repository import (
     create_bedrock_client,
     create_bedrock_repository,
 )
+from infrastructure.cognito_auth_repository import CognitoAuthRepository
 from infrastructure.db import create_db
+from infrastructure.image_judgment_repository import ImageJudgmentRepository
 from infrastructure.lgtm_image_repository import create_lgtm_image_repository
 from infrastructure.rekognition_repository import (
     create_rekognition_client,
@@ -55,10 +57,19 @@ def handle_process(
         raise ValueError(f"想定外のprocessが指定されました: {process}")
 
     if process == ProcessType.JUDGE_IMAGE.value:
-        judge_image_usecase = JudgeImageUsecase(bucket_name, object_key)
+        auth_repository = CognitoAuthRepository(logger)
+        image_judgment_repository = ImageJudgmentRepository(auth_repository, logger)
 
-        judge_image_usecase.execute()
-        return bucket_name, object_key, None
+        judge_image_usecase = JudgeImageUsecase(
+            s3_repository,
+            image_judgment_repository,
+            bucket_name,
+            object_key,
+            logger,
+        )
+
+        result_bucket, result_key = judge_image_usecase.execute()
+        return result_bucket, result_key, None
     elif process == ProcessType.GENERATE_LGTM_IMAGE.value:
         rekognition_client = create_rekognition_client()
         cat_detection_repository = create_rekognition_repository(
