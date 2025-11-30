@@ -11,6 +11,13 @@ from domain.image_judgment_repository_interface import (
 from log.logging import AppLogger
 
 
+def create_image_judgment_repository(
+    auth_repository: AuthRepositoryInterface,
+    logger: AppLogger,
+) -> ImageJudgmentRepositoryInterface:
+    return ImageJudgmentRepository(auth_repository, logger)
+
+
 class ImageJudgmentRepository(ImageJudgmentRepositoryInterface):
     def __init__(
         self,

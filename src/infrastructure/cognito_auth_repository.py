@@ -9,6 +9,10 @@ from domain.auth_repository_interface import AuthRepositoryInterface
 from log.logging import AppLogger
 
 
+def create_cognito_auth_repository(logger: AppLogger) -> AuthRepositoryInterface:
+    return CognitoAuthRepository(logger)
+
+
 class CognitoAuthRepository(AuthRepositoryInterface):
     def __init__(self, logger: AppLogger) -> None:
         self.logger = logger
