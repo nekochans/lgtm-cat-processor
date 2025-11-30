@@ -81,3 +81,46 @@ usecase/  ←─────── domain/ (インターフェース定義)
 - **テスタビリティ**: usecaseは`Protocol`に依存するのでモックが容易
 - **保守性**: 各層の責務が明確で変更影響範囲を限定できる
 - **拡張性**: 新しい外部システム（例: DynamoDB）追加時もusecaseを変更不要
+
+## コーディングルール
+
+### インポートパス
+
+`src/`配下のモジュールをインポートする際は、`src.`プレフィックスを付けずにインポートしてください。
+
+```python
+# 正しい
+from domain.auth_repository_interface import AuthRepositoryInterface
+from log.logging import AppLogger
+
+# 誤り（mypyエラーの原因になる）
+from src.domain.auth_repository_interface import AuthRepositoryInterface
+from src.log.logging import AppLogger
+```
+
+これは`pyproject.toml`の`pythonpath = ["src"]`設定に基づいています。
+
+### TypedDictの型ヒント
+
+APIレスポンスなど外部データ構造をTypedDictで定義する場合は、`Required`/`NotRequired`を明示的に使用して可読性を高めてください。
+
+```python
+# 推奨
+from typing import NotRequired, Required, TypedDict
+
+class ApiResponse(TypedDict):
+    id: Required[int]              # 必須フィールド
+    name: Required[str]            # 必須フィールド
+    description: NotRequired[str]  # オプショナルフィールド
+
+# 非推奨（デフォルトでRequiredだが意図が不明確）
+class ApiResponse(TypedDict):
+    id: int
+    name: str
+    description: NotRequired[str]
+```
+
+**使い分け**:
+- `Required[T]`: キーが必ず存在する
+- `NotRequired[T]`: キー自体が存在しない可能性がある
+- `T | None`: キーは存在するが値がNoneの可能性がある

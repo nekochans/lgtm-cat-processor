@@ -227,3 +227,101 @@ class TestS3Repository:
         error_log_call = mock_logger.error.call_args
         assert "Unexpected error:" in error_log_call[0][0]
         assert error_log_call[1]["exc_info"] is True
+
+    def test_copy_image_success(
+        self,
+        repository: S3Repository,
+        mock_s3_client: Mock,
+        mock_logger: Mock,
+    ) -> None:
+        """画像のコピーが正常に成功すること"""
+        # Arrange
+        source_bucket = "source-bucket"
+        source_key = "source-image.jpg"
+        dest_bucket = "dest-bucket"
+        dest_key = "dest-image.jpg"
+
+        # Act
+        repository.copy_image(source_bucket, source_key, dest_bucket, dest_key)
+
+        # Assert
+        mock_s3_client.copy_object.assert_called_once_with(
+            CopySource={"Bucket": source_bucket, "Key": source_key},
+            Bucket=dest_bucket,
+            Key=dest_key,
+        )
+        # ログが正しく記録されたことを検証
+        assert mock_logger.info.call_count == 2
+
+    @pytest.mark.parametrize(
+        "error_code,error_message",
+        [
+            ("NoSuchKey", "The specified key does not exist."),
+            ("AccessDenied", "Access Denied"),
+        ],
+        ids=["存在しないキー", "アクセス権限なし"],
+    )
+    def test_copy_image_client_errors(
+        self,
+        repository: S3Repository,
+        mock_s3_client: Mock,
+        mock_logger: Mock,
+        error_code: str,
+        error_message: str,
+    ) -> None:
+        """コピー時にS3 ClientErrorが適切に発生しログ記録されること"""
+        # Arrange
+        source_bucket = "source-bucket"
+        source_key = "source-image.jpg"
+        dest_bucket = "dest-bucket"
+        dest_key = "dest-image.jpg"
+
+        error_response: Any = {"Error": {"Code": error_code, "Message": error_message}}
+        mock_s3_client.copy_object.side_effect = ClientError(
+            error_response, "CopyObject"
+        )
+
+        # Act & Assert
+        with pytest.raises(ClientError) as exc_info:
+            repository.copy_image(source_bucket, source_key, dest_bucket, dest_key)
+
+        assert exc_info.value.response["Error"]["Code"] == error_code
+        mock_s3_client.copy_object.assert_called_once_with(
+            CopySource={"Bucket": source_bucket, "Key": source_key},
+            Bucket=dest_bucket,
+            Key=dest_key,
+        )
+
+        # ログが正しく記録されたことを検証
+        mock_logger.error.assert_called_once()
+        error_log_call = mock_logger.error.call_args
+        assert "AWS ClientError" in error_log_call[0][0]
+        assert error_code in error_log_call[0][0]
+        assert error_log_call[1]["exc_info"] is True
+
+    def test_copy_image_generic_error(
+        self,
+        repository: S3Repository,
+        mock_s3_client: Mock,
+        mock_logger: Mock,
+    ) -> None:
+        """コピー時にその他のエラーが発生した場合に適切に例外が発生しログ記録されること"""
+        # Arrange
+        source_bucket = "source-bucket"
+        source_key = "source-image.jpg"
+        dest_bucket = "dest-bucket"
+        dest_key = "dest-image.jpg"
+
+        mock_s3_client.copy_object.side_effect = Exception("Copy failed")
+
+        # Act & Assert
+        with pytest.raises(Exception, match="Copy failed"):
+            repository.copy_image(source_bucket, source_key, dest_bucket, dest_key)
+
+        mock_s3_client.copy_object.assert_called_once()
+
+        # ログが正しく記録されたことを検証
+        mock_logger.error.assert_called_once()
+        error_log_call = mock_logger.error.call_args
+        assert "Unexpected error:" in error_log_call[0][0]
+        assert error_log_call[1]["exc_info"] is True
