@@ -19,7 +19,7 @@ class CognitoAuthRepository(AuthRepositoryInterface):
         self._cached_token: str | None = None
         self._token_expires_at: float = 0.0
 
-    def get_access_token(self) -> str:
+    def request_access_token(self) -> str:
         if self._is_token_valid():
             self.logger.info("キャッシュされたアクセストークンを使用")
             return self._cached_token  # type: ignore[return-value]

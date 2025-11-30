@@ -36,7 +36,7 @@ class ImageJudgmentRepository(ImageJudgmentRepositoryInterface):
 
         endpoint = f"{api_url}/cat-images/validate/s3"
 
-        access_token = self.auth_repository.get_access_token()
+        access_token = self.auth_repository.request_access_token()
 
         headers = {
             "Content-Type": "application/json",

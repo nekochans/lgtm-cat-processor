@@ -17,7 +17,7 @@ class TestImageJudgmentRepository:
     def mock_auth_repository(self) -> Mock:
         """AuthRepositoryInterfaceのモック"""
         mock = Mock(spec=AuthRepositoryInterface)
-        mock.get_access_token.return_value = "test-access-token"
+        mock.request_access_token.return_value = "test-access-token"
         return mock
 
     @pytest.fixture
@@ -72,7 +72,7 @@ class TestImageJudgmentRepository:
             # Assert
             assert result["is_acceptable"] is True
             assert "not_acceptable_reason" not in result
-            mock_auth_repository.get_access_token.assert_called_once()
+            mock_auth_repository.request_access_token.assert_called_once()
             mock_post.assert_called_once()
             call_args = mock_post.call_args
             assert call_args[0][0] == "https://api.example.com/cat-images/validate/s3"

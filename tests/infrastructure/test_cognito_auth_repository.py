@@ -31,7 +31,7 @@ class TestCognitoAuthRepository:
             "COGNITO_CLIENT_SECRET": "test-client-secret",
         }
 
-    def test_get_access_token_success(
+    def test_request_access_token_success(
         self,
         repository: CognitoAuthRepository,
         mock_env_vars: dict[str, str],
@@ -53,7 +53,7 @@ class TestCognitoAuthRepository:
             mock_post.return_value = mock_response
 
             # Act
-            result = repository.get_access_token()
+            result = repository.request_access_token()
 
             # Assert
             assert result == "test-access-token"
@@ -66,7 +66,7 @@ class TestCognitoAuthRepository:
                 "application/x-www-form-urlencoded"
             )
 
-    def test_get_access_token_uses_cache(
+    def test_request_access_token_uses_cache(
         self,
         repository: CognitoAuthRepository,
         mock_env_vars: dict[str, str],
@@ -87,15 +87,15 @@ class TestCognitoAuthRepository:
             mock_post.return_value = mock_response
 
             # Act - 1回目の呼び出し
-            result1 = repository.get_access_token()
+            result1 = repository.request_access_token()
             # Act - 2回目の呼び出し（キャッシュを使用）
-            result2 = repository.get_access_token()
+            result2 = repository.request_access_token()
 
             # Assert
             assert result1 == result2 == "test-access-token"
             assert mock_post.call_count == 1  # 1回しか呼ばれない
 
-    def test_get_access_token_refreshes_expired_cache(
+    def test_request_access_token_refreshes_expired_cache(
         self,
         repository: CognitoAuthRepository,
         mock_env_vars: dict[str, str],
@@ -120,13 +120,13 @@ class TestCognitoAuthRepository:
             mock_post.return_value = mock_response
 
             # Act
-            result = repository.get_access_token()
+            result = repository.request_access_token()
 
             # Assert
             assert result == "new-access-token"
             mock_post.assert_called_once()
 
-    def test_get_access_token_missing_env_vars(
+    def test_request_access_token_missing_env_vars(
         self,
         repository: CognitoAuthRepository,
     ) -> None:
@@ -137,9 +137,9 @@ class TestCognitoAuthRepository:
         with patch.dict("os.environ", empty_env, clear=True):
             # Act & Assert
             with pytest.raises(ValueError, match="COGNITO_TOKEN_ENDPOINT"):
-                repository.get_access_token()
+                repository.request_access_token()
 
-    def test_get_access_token_http_error(
+    def test_request_access_token_http_error(
         self,
         repository: CognitoAuthRepository,
         mock_env_vars: dict[str, str],
@@ -159,9 +159,9 @@ class TestCognitoAuthRepository:
 
             # Act & Assert
             with pytest.raises(requests.exceptions.HTTPError):
-                repository.get_access_token()
+                repository.request_access_token()
 
-    def test_get_access_token_network_error(
+    def test_request_access_token_network_error(
         self,
         repository: CognitoAuthRepository,
         mock_env_vars: dict[str, str],
@@ -178,9 +178,9 @@ class TestCognitoAuthRepository:
 
             # Act & Assert
             with pytest.raises(requests.exceptions.RequestException):
-                repository.get_access_token()
+                repository.request_access_token()
 
-    def test_get_access_token_parse_error(
+    def test_request_access_token_parse_error(
         self,
         repository: CognitoAuthRepository,
         mock_env_vars: dict[str, str],
@@ -199,9 +199,9 @@ class TestCognitoAuthRepository:
 
             # Act & Assert
             with pytest.raises(KeyError):
-                repository.get_access_token()
+                repository.request_access_token()
 
-    def test_get_access_token_default_expires_in(
+    def test_request_access_token_default_expires_in(
         self,
         repository: CognitoAuthRepository,
         mock_env_vars: dict[str, str],
@@ -224,7 +224,7 @@ class TestCognitoAuthRepository:
             mock_time.return_value = 1000.0
 
             # Act
-            result = repository.get_access_token()
+            result = repository.request_access_token()
 
             # Assert
             assert result == "test-access-token"
