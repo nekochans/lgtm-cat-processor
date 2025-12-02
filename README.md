@@ -48,7 +48,7 @@ make test
 
 ## ディレクトリ構成
 
-```
+```tree
 src/
 ├── domain/          # インターフェース定義（Protocol）
 ├── infrastructure/  # 外部システムの具体実装（S3、DB）
