@@ -105,9 +105,9 @@ CIワークフロー（`.github/workflows/ci.yml`）は4つのジョブを実行
 - `GENERATE_LGTM_IMAGE_UPLOAD_BUCKET` - 処理済み画像のアップロード先S3バケット
 - `VECTOR_INDEX_BUCKET` - ベクトルインデックス保存用のS3 Vectorsバケット名
 - `VECTOR_INDEX_NAME` - S3 Vectorsのインデックス名
-- `BEDROCK_REGION` - AWS Bedrockのリージョン（デフォルト: us-east-1）
+- `BEDROCK_REGION` - AWS Bedrockのリージョン（デフォルト: ap-northeast-1）
 - `BEDROCK_MODEL_ID` - Bedrockで使用する画像埋め込みモデルID（デフォルト: cohere.embed-v4:0）
-- `S3_VECTORS_REGION` - AWS S3 Vectorsのリージョン（デフォルト: us-east-1）
+- `S3_VECTORS_REGION` - AWS S3 Vectorsのリージョン（デフォルト: ap-northeast-1）
 
 ## GitとGitHubワークフロールール
 
