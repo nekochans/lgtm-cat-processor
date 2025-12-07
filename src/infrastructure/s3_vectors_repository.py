@@ -16,7 +16,7 @@ from log.logging import AppLogger
 
 
 def create_s3_client_for_vector_storage() -> S3VectorsClient:
-    region_name = os.environ.get("S3_VECTORS_REGION", "us-east-1")
+    region_name = os.environ.get("S3_VECTORS_REGION", "ap-northeast-1")
     return boto3.client("s3vectors", region_name=region_name)
 
 

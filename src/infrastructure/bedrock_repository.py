@@ -14,7 +14,7 @@ from log.logging import AppLogger
 
 
 def create_bedrock_client() -> BedrockRuntimeClient:
-    region_name = os.environ.get("BEDROCK_REGION", "us-east-1")
+    region_name = os.environ.get("BEDROCK_REGION", "ap-northeast-1")
     return boto3.client("bedrock-runtime", region_name=region_name)
 
 
